@@ -1,0 +1,206 @@
+@reference "tailwindcss";
+
+@layer components {
+  /* ── Custom fields section ──────────────────────────────── */
+  .custom-fields-section {
+    @apply mt-8 pt-8 border-t border-gray-200 dark:border-gray-700;
+  }
+
+  .custom-fields-title {
+    @apply text-lg font-semibold mb-6 text-gray-900 dark:text-gray-100;
+  }
+
+  .custom-fields-grid {
+    @apply grid gap-6;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
+
+  @media (min-width: 768px) {
+    .custom-fields-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  .custom-field-group {
+    @apply flex flex-col gap-1;
+  }
+
+  .custom-field-group label {
+    @apply text-sm font-medium text-gray-900 dark:text-gray-200;
+  }
+
+  .custom-field-group label .required {
+    @apply text-red-600 ml-1;
+  }
+
+  .custom-field-group input[type="text"],
+  .custom-field-group input[type="number"],
+  .custom-field-group input[type="date"],
+  .custom-field-group select,
+  .custom-field-group textarea {
+    @apply w-full px-3 py-2 border border-gray-200 rounded-md font-[inherit] text-sm
+           transition-colors duration-200
+           focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10
+           dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+  }
+
+  .custom-field-group input.input-error,
+  .custom-field-group select.input-error,
+  .custom-field-group textarea.input-error {
+    @apply border-red-600 ring-2 ring-red-600/10;
+  }
+
+  .checkbox-label {
+    @apply flex items-center gap-2 cursor-pointer font-normal;
+  }
+
+  .checkbox-input {
+    @apply w-5 h-5 cursor-pointer accent-blue-600;
+  }
+
+  .field-error {
+    @apply text-sm text-red-600 mt-1;
+  }
+
+  .custom-fields-loading {
+    @apply p-8 text-center text-gray-500 italic;
+  }
+
+  /* ── Document template style editor ─────────────────────── */
+  .template-style-json-textarea {
+    @apply font-mono text-xs min-h-28 resize-y;
+    font-family: 'Courier New', Courier, monospace;
+  }
+
+  .template-type-hint {
+    @apply text-xs text-gray-500 mt-1;
+    font-family: 'Courier New', Courier, monospace;
+    white-space: pre-wrap;
+  }
+
+  /* ── Workflow field ──────────────────────────────────────── */
+  .workflow-field {
+    @apply p-5 bg-white border border-gray-200 rounded-xl transition-colors duration-200
+           dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .workflow-field.workflow-error {
+    @apply border-red-600 ring-2 ring-red-600/10;
+  }
+
+  .workflow-field.workflow-disabled {
+    @apply opacity-60 pointer-events-none bg-gray-50 dark:bg-gray-900;
+  }
+
+  .workflow-container-horizontal {
+    @apply flex items-center gap-2 flex-wrap;
+  }
+
+  .workflow-container-vertical {
+    @apply flex flex-col gap-4;
+  }
+
+  .workflow-step {
+    @apply relative flex flex-col items-center;
+  }
+
+  .workflow-container-horizontal .workflow-step {
+    @apply flex-1 min-w-20;
+  }
+
+  .workflow-connector {
+    @apply absolute h-0.5 bg-gray-200 transition-colors duration-300 dark:bg-gray-600;
+  }
+
+  .workflow-container-horizontal .workflow-connector {
+    width: 32px;
+    top: 16px;
+    left: calc(50% + 16px);
+  }
+
+  .workflow-container-vertical .workflow-connector {
+    @apply w-0.5 h-8;
+    top: 32px;
+    left: 16px;
+  }
+
+  .workflow-connector-filled {
+    @apply bg-green-500 shadow-[0_0_8px_theme(colors.green.500/40%)];
+  }
+
+  .workflow-connector-dashed {
+    background-image: repeating-linear-gradient(
+      90deg,
+      theme(colors.gray.500) 0px,
+      theme(colors.gray.500) 4px,
+      transparent 4px,
+      transparent 8px
+    );
+  }
+
+  .workflow-milestone {
+    @apply relative w-8 h-8 rounded-full border-2 border-gray-300 bg-white text-gray-400
+           flex items-center justify-center cursor-pointer
+           transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]
+           text-[0.7rem] font-semibold outline-none
+           dark:bg-gray-700 dark:border-gray-600;
+  }
+
+  .workflow-milestone:hover:not(.workflow-milestone-completed):not(.workflow-milestone-active) {
+    @apply border-blue-500 text-blue-500 scale-110;
+  }
+
+  .workflow-milestone-completed {
+    @apply bg-green-500 border-green-500 text-white shadow-[0_4px_12px_theme(colors.green.500/30%)];
+  }
+
+  .workflow-milestone-active {
+    @apply bg-blue-500 border-blue-500 text-white scale-[1.15]
+           shadow-[0_0_0_4px_theme(colors.blue.500/20%)]
+           animate-[workflowPulse_2s_cubic-bezier(0.4,0,0.6,1)_infinite];
+  }
+
+  .workflow-milestone-future {
+    @apply bg-transparent border-gray-300 text-gray-400 dark:border-gray-600;
+  }
+
+  .workflow-milestone:disabled {
+    @apply cursor-not-allowed opacity-60;
+  }
+
+  .workflow-milestone-icon {
+    @apply w-4 h-4;
+  }
+
+  .workflow-milestone-pulse {
+    @apply absolute w-full h-full rounded-full bg-blue-500
+           animate-[workflowPing_1.5s_cubic-bezier(0,0,0.2,1)_infinite];
+  }
+
+  .workflow-label {
+    @apply mt-2 text-center text-xs font-medium text-gray-500 transition-colors duration-300
+           dark:text-gray-400;
+  }
+
+  .workflow-label-active {
+    @apply text-blue-500 font-semibold dark:text-blue-300;
+  }
+
+  .workflow-label-text {
+    @apply break-words;
+    hyphens: auto;
+  }
+
+  .workflow-label-timestamp {
+    @apply text-[0.65rem] text-gray-500 mt-0.5;
+  }
+}
+
+@keyframes workflowPulse {
+  0%, 100% { box-shadow: 0 0 0 4px rgb(59 130 246 / 0.2); transform: scale(1.15); }
+  50%       { box-shadow: 0 0 0 8px rgb(59 130 246 / 0.1); transform: scale(1.2); }
+}
+
+@keyframes workflowPing {
+  75%, 100% { transform: scale(2); opacity: 0; }
+}

@@ -1,0 +1,208 @@
+### ====================================
+### NABISCO THEMED SAMPLE DATA - API Tests
+### ====================================
+
+### 1. Create Custom Fields for Nabisco Theme
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "brand",
+  "label": "Brand",
+  "type": "text",
+  "required": true,
+  "config": { "maxLength": 50, "placeholder": "e.g. Oreo, Ritz" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "region",
+  "label": "Region",
+  "type": "text",
+  "required": false,
+  "config": { "maxLength": 50, "placeholder": "e.g. North America" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Contact",
+  "key": "favorite_snack",
+  "label": "Favorite Snack",
+  "type": "text",
+  "required": false,
+  "config": { "maxLength": 50, "placeholder": "e.g. Chips Ahoy!" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "product_line",
+  "label": "Product Line",
+  "type": "text",
+  "required": true,
+  "config": { "maxLength": 50, "placeholder": "e.g. Crackers" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Activity",
+  "key": "distributor",
+  "label": "Distributor",
+  "type": "text",
+  "required": false,
+  "config": { "maxLength": 50, "placeholder": "e.g. Sysco" }
+}
+
+### 2. Create Nabisco Customers
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco USA",
+  "status": "active",
+  "customFields": {
+    "brand": "Oreo",
+    "region": "North America"
+  }
+}
+
+> {% client.global.set("nabiscoCustomerId", response.body.id); %}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Europe",
+  "status": "active",
+  "customFields": {
+    "brand": "Ritz",
+    "region": "Europe"
+  }
+}
+
+> {% client.global.set("nabiscoCustomerId2", response.body.id); %}
+
+### 3. Create Nabisco Contacts
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{nabiscoCustomerId}},
+  "name": "Samantha Baker",
+  "email": "samantha.baker@nabisco.com",
+  "phone": "+1-555-1001",
+  "title": "Brand Manager",
+  "customFields": {
+    "favorite_snack": "Oreo Thins"
+  }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{nabiscoCustomerId2}},
+  "name": "Lars Schmidt",
+  "email": "lars.schmidt@nabisco.com",
+  "phone": "+49-555-2002",
+  "title": "Sales Director",
+  "customFields": {
+    "favorite_snack": "Ritz Crackers"
+  }
+}
+
+### 4. Create Nabisco Opportunities
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{nabiscoCustomerId}},
+  "name": "Oreo Expansion Deal",
+  "stage": "prospecting",
+  "value": 250000.00,
+  "probability": 20,
+  "closeDate": "2026-09-30",
+  "customFields": {
+    "product_line": "Cookies"
+  }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{nabiscoCustomerId2}},
+  "name": "Ritz New Market Launch",
+  "stage": "discovery",
+  "value": 180000.00,
+  "probability": 15,
+  "closeDate": "2026-10-15",
+  "customFields": {
+    "product_line": "Crackers"
+  }
+}
+
+### 5. Create Nabisco Activities
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Oreo Product Launch Call",
+  "type": "call",
+  "dueAt": "2026-03-20T14:00:00Z",
+  "description": "Kickoff call for Oreo expansion",
+  "relatedType": "customer",
+  "relatedId": {{nabiscoCustomerId}},
+  "status": "scheduled",
+  "customFields": {
+    "distributor": "Sysco"
+  }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Ritz Marketing Email",
+  "type": "email",
+  "dueAt": "2026-03-25T09:00:00Z",
+  "description": "Send marketing email for Ritz launch",
+  "relatedType": "customer",
+  "relatedId": {{nabiscoCustomerId2}},
+  "status": "scheduled",
+  "customFields": {
+    "distributor": "FoodService Europe"
+  }
+}
+

@@ -1,0 +1,26 @@
+server:
+  servlet:
+    context-path: /
+
+security:
+  jwt:
+    secret: test-secret-key-for-jwt-testing-at-least-32-chars-long-minimum
+    expiration: 3600000
+    refresh-expiration: 604800000
+
+spring:
+  ai:
+    anthropic:
+      api-key: test-dummy-key-for-testing-only
+    google:
+      genai:
+        project-id: test-project
+        api-key: test-dummy-key
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        auto-startup: false

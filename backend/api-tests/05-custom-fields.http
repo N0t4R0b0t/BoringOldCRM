@@ -1,0 +1,251 @@
+### ====================================
+### CUSTOM FIELD DEFINITIONS - API Tests
+### ====================================
+
+### 1. Create Text Custom Field for Customer
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "industry",
+  "label": "Industry",
+  "type": "text",
+  "required": true,
+  "config": {
+    "maxLength": 100,
+    "placeholder": "Enter industry"
+  }
+}
+
+> {%
+    client.test("Status is 201", function() {
+        client.assert(response.status === 201, "Expected 201");
+    });
+    client.global.set("customerFieldId", response.body.id);
+    client.log("✓ Created text custom field, ID: " + response.body.id);
+%}
+
+### 2. Create Number Custom Field for Customer
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "employee_count",
+  "label": "Number of Employees",
+  "type": "number",
+  "required": false,
+  "config": {
+    "min": 1,
+    "max": 1000000
+  }
+}
+
+> {%
+    client.log("✓ Created number custom field");
+%}
+
+### 3. Create Select Custom Field for Opportunity
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "lead_source",
+  "label": "Lead Source",
+  "type": "select",
+  "required": true,
+  "config": {
+    "options": ["Website", "Referral", "Conference", "Cold Call", "Social Media"]
+  }
+}
+
+> {%
+    client.global.set("oppFieldId", response.body.id);
+    client.log("✓ Created select custom field");
+%}
+
+### 4. Create Date Custom Field for Contact
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Contact",
+  "key": "birthday",
+  "label": "Birthday",
+  "type": "date",
+  "required": false,
+  "config": {}
+}
+
+> {%
+    client.log("✓ Created date custom field");
+%}
+
+### 5. Create Boolean Custom Field for Activity
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Activity",
+  "key": "requires_followup",
+  "label": "Requires Follow-up",
+  "type": "boolean",
+  "required": false,
+  "config": {
+    "defaultValue": false
+  }
+}
+
+> {%
+    client.log("✓ Created boolean custom field");
+%}
+
+### 6. List Custom Fields for Customer
+GET {{baseUrl}}/custom-fields?entityType=Customer
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has array response", function() {
+        client.assert(Array.isArray(response.body), "Should return array");
+    });
+    client.log("✓ Listed Customer custom fields: " + response.body.length);
+%}
+
+### 7. List Custom Fields for Opportunity
+GET {{baseUrl}}/custom-fields?entityType=Opportunity
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Listed Opportunity custom fields: " + response.body.length);
+%}
+
+### 8. List Custom Fields for Contact
+GET {{baseUrl}}/custom-fields?entityType=Contact
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Listed Contact custom fields: " + response.body.length);
+%}
+
+### 9. List Custom Fields for Activity
+GET {{baseUrl}}/custom-fields?entityType=Activity
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Listed Activity custom fields: " + response.body.length);
+%}
+
+### 10. Update Custom Field - Change Label
+PUT {{baseUrl}}/custom-fields/{{customerFieldId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "label": "Industry Sector",
+  "required": false
+}
+
+> {%
+    client.test("Label was updated", function() {
+        client.assert(response.body.label === "Industry Sector", "Label should be updated");
+    });
+    client.log("✓ Updated custom field label");
+%}
+
+### 11. Update Custom Field - Change Config
+PUT {{baseUrl}}/custom-fields/{{oppFieldId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "config": {
+    "options": ["Website", "Referral", "Conference", "Cold Call", "Social Media", "Partner"]
+  }
+}
+
+> {%
+    client.log("✓ Updated custom field config");
+%}
+
+### 12. Delete Custom Field
+DELETE {{baseUrl}}/custom-fields/{{customerFieldId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 204", function() {
+        client.assert(response.status === 204, "Expected 204");
+    });
+    client.log("✓ Deleted custom field");
+%}
+
+### 13. Error Test - Duplicate Key
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "lead_source",
+  "label": "Lead Source Duplicate",
+  "type": "text",
+  "required": false,
+  "config": {}
+}
+
+> {%
+    client.test("Should reject duplicate key", function() {
+        client.assert(response.status === 400 || response.status === 409, "Expected validation error");
+    });
+    client.log("✓ Duplicate key handled: status " + response.status);
+%}
+
+### 14. Error Test - Invalid Entity Type
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "InvalidEntity",
+  "key": "test_field",
+  "label": "Test Field",
+  "type": "text",
+  "required": false,
+  "config": {}
+}
+
+> {%
+    client.test("Should reject invalid entity type", function() {
+        client.assert(response.status === 400, "Expected validation error");
+    });
+    client.log("✓ Invalid entity type handled: status " + response.status);
+%}
+
+### 15. Test Customer with Custom Field
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Test Company with Custom Fields",
+  "status": "active",
+  "customFields": {
+    "employee_count": 500
+  }
+}
+
+> {%
+    client.test("Custom field accepted", function() {
+        client.assert(response.status === 201, "Should create customer with custom field");
+    });
+    client.log("✓ Created customer with custom field data");
+%}

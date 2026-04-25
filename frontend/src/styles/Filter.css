@@ -1,0 +1,49 @@
+@reference "tailwindcss";
+
+@layer components {
+  .filter-panel {
+    @apply bg-white border border-gray-300 rounded-lg p-6 mb-4 shadow-sm dark:bg-gray-800 dark:border-gray-600;
+  }
+
+  .filter-header {
+    @apply flex justify-between items-center mb-4 pb-4 border-b border-gray-100 dark:border-gray-700;
+  }
+
+  .filter-header h3 {
+    @apply m-0 text-base font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  .close-btn {
+    @apply bg-transparent border-none text-2xl text-gray-400 cursor-pointer p-0
+           w-6 h-6 flex items-center justify-center transition-colors duration-200
+           hover:text-gray-900 dark:hover:text-gray-100;
+  }
+
+  .filter-fields {
+    @apply grid gap-4 mb-6;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
+  .filter-field {
+    @apply flex flex-col gap-2;
+  }
+
+  .filter-field label {
+    @apply font-medium text-gray-900 text-sm dark:text-gray-200;
+  }
+
+  .filter-input,
+  .filter-select {
+    @apply px-3 py-2 border border-gray-300 rounded text-sm transition-colors duration-200
+           focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10
+           dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+  }
+
+  .filter-actions {
+    @apply flex gap-2 justify-end;
+  }
+
+  .filter-actions .btn {
+    @apply min-w-24;
+  }
+}

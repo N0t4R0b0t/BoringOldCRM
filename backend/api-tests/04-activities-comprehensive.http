@@ -1,0 +1,645 @@
+### ====================================
+### ACTIVITIES - Comprehensive API Tests
+### ====================================
+### Prerequisites: Run customers tests first to get customerId
+
+### 0. Ensure we have a customerId
+GET {{baseUrl}}/customers?page=0&size=1
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (!client.global.get("customerId") && response.body.content && response.body.content.length > 0) {
+        client.global.set("customerId", response.body.content[0].id);
+        client.log("✓ Auto-captured customerId: " + response.body.content[0].id);
+    }
+%}
+
+### 1. Create Activity - Call Type
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Discovery Call",
+  "type": "call",
+  "dueAt": "2026-03-15T10:00:00Z",
+  "description": "Initial discovery call to understand customer needs",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "scheduled"
+}
+
+> {%
+    client.test("Status is 201", function() {
+        client.assert(response.status === 201, "Expected 201");
+    });
+    client.test("Response has id", function() {
+        client.assert(response.body.id !== undefined, "Response should have id");
+    });
+    client.global.set("activityId", response.body.id);
+    client.log("✓ Created call activity with ID: " + response.body.id);
+%}
+
+### 2. Create Activity - Email Type
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Follow-up Email",
+  "type": "email",
+  "dueAt": "2026-03-16T14:30:00Z",
+  "description": "Send proposal document and pricing",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "pending"
+}
+
+> {%
+    client.global.set("emailActivityId", response.body.id);
+    client.log("✓ Created email activity, ID: " + response.body.id);
+%}
+
+### 3. Create Activity - Meeting Type
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Quarterly Business Review",
+  "type": "meeting",
+  "dueAt": "2026-03-20T15:00:00Z",
+  "description": "Review Q1 performance and discuss Q2 strategy",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "scheduled"
+}
+
+> {%
+    client.global.set("meetingActivityId", response.body.id);
+    client.log("✓ Created meeting activity, ID: " + response.body.id);
+%}
+
+### 4. Create Activity - Task Type
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Prepare Demo Environment",
+  "type": "task",
+  "dueAt": "2026-03-18T12:00:00Z",
+  "description": "Set up demo environment with customer-specific data",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "in_progress"
+}
+
+> {%
+    client.global.set("taskActivityId", response.body.id);
+    client.log("✓ Created task activity, ID: " + response.body.id);
+%}
+
+### 5. Create Activity - Demo Type
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Product Demo",
+  "type": "demo",
+  "dueAt": "2026-03-22T11:00:00Z",
+  "description": "Full product demonstration for decision makers",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "scheduled"
+}
+
+> {%
+    client.global.set("demoActivityId", response.body.id);
+    client.log("✓ Created demo activity, ID: " + response.body.id);
+%}
+
+### 6. Create Activity - With Custom Fields
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Technical Workshop",
+  "type": "meeting",
+  "dueAt": "2026-03-25T09:00:00Z",
+  "description": "Deep dive technical session with engineering team",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "scheduled",
+  "customFields": {
+    "attendees": ["John Doe", "Jane Smith", "Bob Wilson"],
+    "location": "Virtual - Zoom",
+    "duration": "2 hours",
+    "agenda": "Architecture review, API integration, Security discussion"
+  }
+}
+
+> {%
+    client.global.set("customFieldsActivityId", response.body.id);
+    client.log("✓ Created activity with custom fields, ID: " + response.body.id);
+%}
+
+### 7. Create Activity - Completed Status
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Initial Contact Call",
+  "type": "call",
+  "dueAt": "2026-03-10T10:00:00Z",
+  "description": "Made initial contact, customer is interested",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "completed"
+}
+
+> {%
+    client.global.set("completedActivityId", response.body.id);
+    client.log("✓ Created completed activity, ID: " + response.body.id);
+%}
+
+### 8. Create Activity - Cancelled Status
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Postponed Meeting",
+  "type": "meeting",
+  "dueAt": "2026-03-12T14:00:00Z",
+  "description": "Customer requested to postpone",
+  "relatedType": "customer",
+  "relatedId": {{customerId}},
+  "status": "cancelled"
+}
+
+> {%
+    client.log("✓ Created cancelled activity");
+%}
+
+### 9. Create Activity - Minimal Fields
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Quick Task",
+  "type": "task",
+  "relatedType": "customer",
+  "relatedId": {{customerId}}
+}
+
+> {%
+    client.test("Created with minimal fields", function() {
+        client.assert(response.status === 201, "Should accept minimal fields");
+    });
+    client.log("✓ Created minimal activity");
+%}
+
+### 10. Get Activity by ID
+GET {{baseUrl}}/activities/{{activityId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Activity subject matches", function() {
+        client.assert(response.body.subject === "Discovery Call", "Subject should match");
+    });
+    client.test("Activity type matches", function() {
+        client.assert(response.body.type === "call", "Type should match");
+    });
+    client.log("✓ Retrieved activity: " + response.body.subject);
+%}
+
+### 11. List All Activities - Default Pagination
+GET {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has content array", function() {
+        client.assert(Array.isArray(response.body.content), "Content should be array");
+    });
+    client.log("✓ Listed activities, total: " + response.body.totalElements);
+%}
+
+### 12. List Activities - With Pagination
+GET {{baseUrl}}/activities?page=0&size=5
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Page size is respected", function() {
+        client.assert(response.body.pageSize === 5, "Page size should be 5");
+    });
+    client.log("✓ Paginated list, size: " + response.body.content.length);
+%}
+
+### 13. List Activities - Sorted by Due Date
+GET {{baseUrl}}/activities?sortBy=dueAt&sortOrder=asc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Results are sorted", function() {
+        if (response.body.content.length > 1) {
+            const first = new Date(response.body.content[0].dueAt);
+            const second = new Date(response.body.content[1].dueAt);
+            client.assert(first <= second, "Should be sorted by due date ascending");
+        }
+    });
+    client.log("✓ Activities sorted by dueAt ASC");
+%}
+
+### 14. List Activities - Sorted by Created Date
+GET {{baseUrl}}/activities?sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Activities sorted by createdAt DESC");
+%}
+
+### 15. Search Activities - By Subject
+GET {{baseUrl}}/activities?search=Call
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Search results contain keyword", function() {
+        if (response.body.content.length > 0) {
+            const hasKeyword = response.body.content.some(a =>
+                a.subject.toLowerCase().includes("call")
+            );
+            client.assert(hasKeyword, "Results should contain 'call'");
+        }
+    });
+    client.log("✓ Search by 'Call': " + response.body.content.length + " results");
+%}
+
+### 16. Search Activities - By Description
+GET {{baseUrl}}/activities?search=proposal
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Search in description: " + response.body.content.length + " results");
+%}
+
+### 17. Filter Activities - By Type (Call)
+GET {{baseUrl}}/activities?type=call
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results are call type", function() {
+        const allMatch = response.body.content.every(a => a.type === "call");
+        client.assert(allMatch, "All activities should be call type");
+    });
+    client.log("✓ Filtered by type 'call': " + response.body.content.length);
+%}
+
+### 18. Filter Activities - By Type (Email)
+GET {{baseUrl}}/activities?type=email
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by type 'email': " + response.body.content.length);
+%}
+
+### 19. Filter Activities - By Type (Meeting)
+GET {{baseUrl}}/activities?type=meeting
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by type 'meeting': " + response.body.content.length);
+%}
+
+### 20. Filter Activities - By Type (Task)
+GET {{baseUrl}}/activities?type=task
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by type 'task': " + response.body.content.length);
+%}
+
+### 21. Filter Activities - By Status (Scheduled)
+GET {{baseUrl}}/activities?status=scheduled
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results are scheduled", function() {
+        const allMatch = response.body.content.every(a => a.status === "scheduled");
+        client.assert(allMatch, "All activities should be scheduled");
+    });
+    client.log("✓ Filtered by status 'scheduled': " + response.body.content.length);
+%}
+
+### 22. Filter Activities - By Status (Pending)
+GET {{baseUrl}}/activities?status=pending
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by status 'pending': " + response.body.content.length);
+%}
+
+### 23. Filter Activities - By Status (In Progress)
+GET {{baseUrl}}/activities?status=in_progress
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by status 'in_progress': " + response.body.content.length);
+%}
+
+### 24. Filter Activities - By Status (Completed)
+GET {{baseUrl}}/activities?status=completed
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by status 'completed': " + response.body.content.length);
+%}
+
+### 25. Filter Activities - By Status (Cancelled)
+GET {{baseUrl}}/activities?status=cancelled
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by status 'cancelled': " + response.body.content.length);
+%}
+
+### 26. Combined Filters - Type + Status + Sort
+GET {{baseUrl}}/activities?type=meeting&status=scheduled&sortBy=dueAt&sortOrder=asc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Combined filters applied: " + response.body.content.length + " results");
+%}
+
+### 27. Update Activity - Change Subject and Description
+PUT {{baseUrl}}/activities/{{activityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Discovery Call - Follow Up",
+  "description": "Follow up on initial discovery call, discuss next steps"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Subject was updated", function() {
+        client.assert(response.body.subject === "Discovery Call - Follow Up", "Subject should be updated");
+    });
+    client.log("✓ Updated activity subject and description");
+%}
+
+### 28. Update Activity - Reschedule Due Date
+PUT {{baseUrl}}/activities/{{activityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "dueAt": "2026-03-17T14:00:00Z"
+}
+
+> {%
+    client.test("Due date was updated", function() {
+        // Check if dueAt contains the expected date (allows for format differences)
+        const dueAt = response.body.dueAt;
+        client.assert(dueAt && dueAt.includes("2026-03-17") && dueAt.includes("14:00"),
+            "Due date should contain 2026-03-17 and 14:00, got: " + dueAt);
+    });
+    client.log("✓ Rescheduled activity to " + response.body.dueAt);
+%}
+
+### 29. Update Activity - Mark as In Progress
+PUT {{baseUrl}}/activities/{{emailActivityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "in_progress"
+}
+
+> {%
+    client.test("Status was updated", function() {
+        client.assert(response.body.status === "in_progress", "Status should be in_progress");
+    });
+    client.log("✓ Marked activity as in progress");
+%}
+
+### 30. Update Activity - Mark as Completed
+PUT {{baseUrl}}/activities/{{emailActivityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "completed"
+}
+
+> {%
+    client.test("Status was updated to completed", function() {
+        client.assert(response.body.status === "completed", "Status should be completed");
+    });
+    client.log("✓ Marked activity as completed");
+%}
+
+### 31. Update Activity - Cancel Activity
+PUT {{baseUrl}}/activities/{{meetingActivityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "cancelled",
+  "description": "Customer cancelled due to schedule conflict"
+}
+
+> {%
+    client.test("Activity was cancelled", function() {
+        client.assert(response.body.status === "cancelled", "Status should be cancelled");
+    });
+    client.log("✓ Cancelled activity");
+%}
+
+### 32. Update Activity - Add Custom Fields
+PUT {{baseUrl}}/activities/{{taskActivityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customFields": {
+    "assignedTo": "Tech Team",
+    "priority": "high",
+    "estimatedHours": 4
+  }
+}
+
+> {%
+    client.test("Custom fields updated", function() {
+        client.assert(response.body.customFields !== null, "Should have custom fields");
+    });
+    client.log("✓ Updated custom fields");
+%}
+
+### 33. Update Activity - Change Type
+PUT {{baseUrl}}/activities/{{demoActivityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "type": "meeting",
+  "subject": "Product Demo and Training Session"
+}
+
+> {%
+    client.test("Type was updated", function() {
+        client.assert(response.body.type === "meeting", "Type should be updated");
+    });
+    client.log("✓ Changed activity type");
+%}
+
+### 34. Partial Update - Only Subject
+PUT {{baseUrl}}/activities/{{taskActivityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Prepare Demo Environment - Updated"
+}
+
+> {%
+    client.test("Subject was updated", function() {
+        client.assert(response.body.subject.includes("Updated"), "Subject should be updated");
+    });
+    client.log("✓ Partial update successful");
+%}
+
+### 35. Get Activity - Verify Updates
+GET {{baseUrl}}/activities/{{activityId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Updates persisted", function() {
+        const dueAt = response.body.dueAt;
+        client.assert(dueAt && dueAt.includes("2026-03-17") && dueAt.includes("14:00"),
+            "Due date should persist with 2026-03-17 and 14:00, got: " + dueAt);
+    });
+    client.log("✓ Verified activity updates persisted");
+%}
+
+### 36. Error Test - Create Activity Without Subject
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "type": "call",
+  "relatedType": "customer",
+  "relatedId": {{customerId}}
+}
+
+> {%
+    client.test("Should return validation error", function() {
+        client.assert(response.status === 400 || response.status === 422, "Expected validation error");
+    });
+    client.log("✓ Validation error for missing subject handled");
+%}
+
+### 37. Error Test - Create Activity Without Related Entity
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Invalid Activity",
+  "type": "call"
+}
+
+> {%
+    client.test("Should return validation error", function() {
+        client.assert(response.status === 400 || response.status === 422, "Expected validation error");
+    });
+    client.log("✓ Validation error for missing related entity handled");
+%}
+
+### 38. Error Test - Invalid Activity Type
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Test Invalid Type",
+  "type": "invalid-type",
+  "relatedType": "customer",
+  "relatedId": {{customerId}}
+}
+
+> {%
+    client.test("Should handle invalid type", function() {
+        client.assert(response.status === 400 || response.status === 201, "Should handle invalid type");
+    });
+    client.log("✓ Invalid type handled: status " + response.status);
+%}
+
+### 39. Error Test - Get Non-Existent Activity
+GET {{baseUrl}}/activities/999999
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 404", function() {
+        client.assert(response.status === 404, "Expected 404");
+    });
+    client.log("✓ 404 error handled correctly");
+%}
+
+### 40. Activity Metrics - Get Activity Summary
+GET {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (response.status === 200) {
+        let byType = {};
+        let byStatus = {};
+        response.body.content.forEach(activity => {
+            byType[activity.type] = (byType[activity.type] || 0) + 1;
+            byStatus[activity.status] = (byStatus[activity.status] || 0) + 1;
+        });
+        client.log("✓ Activity Metrics:");
+        client.log("  Total Activities: " + response.body.totalElements);
+        client.log("  By Type: " + JSON.stringify(byType, null, 2));
+        client.log("  By Status: " + JSON.stringify(byStatus, null, 2));
+    }
+%}
+
+### 41. Get Upcoming Activities - Next 7 Days
+# Note: This would require date filtering in the API if supported
+GET {{baseUrl}}/activities?status=scheduled&sortBy=dueAt&sortOrder=asc&size=10
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Upcoming scheduled activities: " + response.body.content.length);
+%}
+
+### 42. Get Overdue Activities - Past Due Date with Status Not Completed
+# Note: This would require date filtering in the API if supported
+GET {{baseUrl}}/activities?status=pending,scheduled,in_progress&sortBy=dueAt&sortOrder=asc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (response.status === 200) {
+        const now = new Date();
+        const overdue = response.body.content.filter(a => {
+            const dueDate = new Date(a.dueAt);
+            return dueDate < now && a.status !== 'completed' && a.status !== 'cancelled';
+        });
+        client.log("✓ Potentially overdue activities: " + overdue.length);
+    }
+%}

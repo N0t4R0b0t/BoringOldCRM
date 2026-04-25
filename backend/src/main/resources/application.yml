@@ -1,0 +1,169 @@
+spring:
+  application:
+    name: bocrm-backend
+  jpa:
+    hibernate:
+      ddl-auto: update
+    #  ddl-auto: create
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+        jdbc:
+          batch_size: 25
+          fetch_size: 50
+        order_inserts: true
+        order_updates: true
+        type:
+          json_format_mapper: 'com.bocrm.backend.config.JacksonConfigHibernateFormatMapperProvider'
+  datasource:
+    url: jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:5432}/${DB_NAME:crm}?stringtype=unspecified
+    username: ${DB_USERNAME:crm}
+    password: ${DB_PASSWORD:crm}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 5
+  flyway:
+    validate-on-migrate: false
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    schemas: public
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail:
+        smtp:
+          auth: ${MAIL_AUTH:false}
+          starttls:
+            enable: ${MAIL_STARTTLS_ENABLE:false}
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:crm}
+    password: ${RABBITMQ_PASSWORD:crm}
+  ai:
+    mcp:
+      server:
+        name: bocrm
+        version: 1.0.0
+        type: SYNC
+        sse-message-endpoint: /mcp/message
+        enabled: true
+        # Derived from app.public-base-url (plus /api context path). MCP_SERVER_BASE_URL still wins if set, for backward compat.
+        base-url: ${MCP_SERVER_BASE_URL:${app.public-base-url}/api}
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      chat:
+        options:
+          model: claude-haiku-4-5-20251001
+          max-tokens: 4096
+    openai:
+      project-id: ${OPENAI_PROJECT_ID:}
+      api-key: ${OPENAI_API_KEY:}
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY:}
+        chat:
+          options:
+            model: gemini-2-flash
+    retry:
+      max-attempts: 1  # Our fallback waterfall handles retries; Spring AI retry is redundant and slow
+    ollama:
+      base-url: ${OLLAMA_BASE_URL:http://localhost:11434}
+      chat:
+        options:
+          model: qwen2.5:14b
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 110MB
+  jackson:
+    serialization:
+      INDENT_OUTPUT: true
+
+app:
+  # Public-facing base URL of this deployment (no trailing slash, no /api suffix), e.g. https://bocrm.example.com.
+  # Referenced by other properties that need to build absolute URLs (MCP server base-url, assistant/MCP tool responses).
+  # Leave empty for local dev — absolute browser links will simply be omitted from tool output.
+  public-base-url: ${APP_PUBLIC_BASE_URL:}
+  encryption:
+    secret: ${APP_ENCRYPTION_SECRET:}  # Base64-encoded 32-byte key for AES-256-GCM
+  mail:
+    default-from: ${MAIL_FROM:noreply@bocrm.com}
+    default-from-name: ${MAIL_FROM_NAME:Boring Old CRM}
+    activity-due-reminder-hours: ${MAIL_ACTIVITY_REMINDER_HOURS:24}
+    support-address: ${MAIL_SUPPORT_ADDRESS:support@bocrm.com}
+  assistant:
+    enabled: ${ASSISTANT_ENABLED:true}
+    history-window: 20
+    max-tool-rounds: 5
+    # Optional: set to enable Tavily web search in the assistant (free key at https://tavily.com)
+    tavily-api-key: ${TAVILY_API_KEY:}
+    # Optional: set to enable NewsAPI news search (free key at https://newsapi.org)
+    news-api-key: ${NEWS_API_KEY:}
+    # Optional: set to enable Brave Search (key at https://brave.com/search/api/)
+    brave-api-key: ${BRAVE_API_KEY:}
+    # Optional: set to enable Serper Google Search (key at https://serper.dev)
+    serper-api-key: ${SERPER_API_KEY:}
+    # Optional: set to enable YouTube search (key at https://console.cloud.google.com)
+    youtube-api-key: ${YOUTUBE_API_KEY:}
+  opa:
+    url: ${OPA_URL:http://localhost:8181}
+    enabled: ${OPA_ENABLED:true}
+  oidc:
+    logout-return-to: ${APP_OIDC_LOGOUT_RETURN_TO:}
+  external-auth:
+    enabled: ${APP_EXTERNAL_AUTH_ENABLED:false}
+    provider: oidc
+    issuer-uri: ${APP_EXTERNAL_AUTH_ISSUER_URI:}
+    jwk-set-uri: ${APP_EXTERNAL_AUTH_JWK_SET_URI:}
+    client-id: ${APP_EXTERNAL_AUTH_CLIENT_ID:}
+    client-secret: ${APP_EXTERNAL_AUTH_CLIENT_SECRET:}
+    audience: ${APP_EXTERNAL_AUTH_AUDIENCE:}
+    require-email-verified: ${APP_EXTERNAL_AUTH_REQUIRE_EMAIL_VERIFIED:true}
+    organizations-claim: organizations
+    organization-ids-claim: org_ids
+    organization-id-claim: org_id
+    email-claim: email
+
+security:
+  jwt:
+    secret: ${SECURITY_JWT_SECRET}
+    expiration: 3600000  # 1 hour in milliseconds
+    refresh-expiration: 604800000  # 7 days
+
+logging:
+  level:
+    root: INFO
+    com.bocrm: DEBUG
+    org.springframework.security: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %logger{36} - %msg%n"
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+  file:
+    name: logs/bocrm.log
+
+server:
+  port: 8080
+  servlet:
+    context-path: /api
+  forward-headers-strategy: ${FORWARD_HEADERS_STRATEGY:none}
+  tomcat:
+    connection-timeout: 600000    # 10 minutes - allow time for large setup prompts / multi-tool LLM chains
+    keep-alive-timeout: 600000
+    threads:
+      max: 200                     # Allow more concurrent requests for bulk operations
+  error:
+    include-stacktrace: on_param
+  shutdown: graceful
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+  api-docs:
+    path: /v3/api-docs

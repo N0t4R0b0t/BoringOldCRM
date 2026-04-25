@@ -1,0 +1,466 @@
+### ====================================
+### CONTACTS - Comprehensive API Tests
+### ====================================
+### Prerequisites: Run customers tests first to get customerId
+
+### 0. Ensure we have a customerId
+GET {{baseUrl}}/customers?page=0&size=1
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (!client.global.get("customerId") && response.body.content && response.body.content.length > 0) {
+        client.global.set("customerId", response.body.content[0].id);
+        client.log("✓ Auto-captured customerId: " + response.body.content[0].id);
+    }
+%}
+
+### 1. Create Contact - Basic
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "John Doe",
+  "email": "john.doe@acme.com",
+  "phone": "+1-555-0100",
+  "title": "CTO"
+}
+
+> {%
+    client.test("Status is 201", function() {
+        client.assert(response.status === 201, "Expected 201");
+    });
+    client.test("Response has id", function() {
+        client.assert(response.body.id !== undefined, "Response should have id");
+    });
+    client.global.set("contactId", response.body.id);
+    client.log("✓ Created contact with ID: " + response.body.id);
+%}
+
+### 2. Create Contact - With All Fields
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Jane Smith",
+  "email": "jane.smith@acme.com",
+  "phone": "+1-555-0101",
+  "title": "CEO",
+  "customFields": {
+    "linkedIn": "https://linkedin.com/in/janesmith",
+    "preferredContact": "email",
+    "timezone": "EST"
+  }
+}
+
+> {%
+    client.global.set("contactId2", response.body.id);
+    client.log("✓ Created contact with all fields, ID: " + response.body.id);
+%}
+
+### 3. Create Contact - Minimal Fields
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Bob Johnson"
+}
+
+> {%
+    client.global.set("contactId3", response.body.id);
+    client.log("✓ Created minimal contact, ID: " + response.body.id);
+%}
+
+### 4. Create Contact - Without Email
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Alice Brown",
+  "phone": "+1-555-0102",
+  "title": "Manager"
+}
+
+> {%
+    client.global.set("noEmailContactId", response.body.id);
+    client.log("✓ Created contact without email, ID: " + response.body.id);
+%}
+
+### 5. Get Contact by ID
+GET {{baseUrl}}/contacts/{{contactId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Contact name matches", function() {
+        client.assert(response.body.name === "John Doe", "Name should match");
+    });
+    client.test("Customer association exists", function() {
+        client.assert(response.body.customerId !== undefined, "Should have customerId");
+    });
+    client.log("✓ Retrieved contact: " + response.body.name);
+%}
+
+### 6. List All Contacts - Default Pagination
+GET {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has content array", function() {
+        client.assert(Array.isArray(response.body.content), "Content should be array");
+    });
+    client.test("Has pagination info", function() {
+        client.assert(response.body.totalElements !== undefined, "Should have totalElements");
+    });
+    client.log("✓ Listed contacts, total: " + response.body.totalElements);
+%}
+
+### 7. List Contacts - With Pagination
+GET {{baseUrl}}/contacts?page=0&size=3
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Page size is respected", function() {
+        client.assert(response.body.pageSize === 3, "Page size should be 3");
+    });
+    client.log("✓ Paginated list, size: " + response.body.content.length);
+%}
+
+### 8. List Contacts - Sorted by Name
+GET {{baseUrl}}/contacts?sortBy=name&sortOrder=asc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Results are sorted", function() {
+        if (response.body.content.length > 1) {
+            client.assert(
+                response.body.content[0].name <= response.body.content[1].name,
+                "Should be sorted ascending"
+            );
+        }
+    });
+    client.log("✓ Contacts sorted by name ASC");
+%}
+
+### 9. List Contacts - Sorted by Created Date
+GET {{baseUrl}}/contacts?sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Contacts sorted by createdAt DESC");
+%}
+
+### 10. Search Contacts - By Name
+GET {{baseUrl}}/contacts?search=John
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Search results contain keyword", function() {
+        if (response.body.content.length > 0) {
+            const hasKeyword = response.body.content.some(c =>
+                c.name.toLowerCase().includes("john")
+            );
+            client.assert(hasKeyword, "Results should contain 'john'");
+        }
+    });
+    client.log("✓ Search by 'John': " + response.body.content.length + " results");
+%}
+
+### 11. Search Contacts - By Email
+GET {{baseUrl}}/contacts?search=jane.smith
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Search by email: " + response.body.content.length + " results");
+%}
+
+### 12. Filter Contacts - By Customer ID
+GET {{baseUrl}}/contacts?customerId={{customerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results belong to customer", function() {
+        const allMatch = response.body.content.every(c => c.customerId == client.global.get("customerId"));
+        client.assert(allMatch, "All contacts should belong to customer");
+    });
+    client.log("✓ Filtered by customerId: " + response.body.content.length + " contacts");
+%}
+
+### 13. Filter Contacts - With Email Only
+GET {{baseUrl}}/contacts?hasEmail=true
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results have email", function() {
+        const allHaveEmail = response.body.content.every(c => c.email !== null && c.email !== "");
+        client.assert(allHaveEmail, "All contacts should have email");
+    });
+    client.log("✓ Filtered contacts with email: " + response.body.content.length);
+%}
+
+### 14. Filter Contacts - Without Email
+GET {{baseUrl}}/contacts?hasEmail=false
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Results have no email", function() {
+        const noneHaveEmail = response.body.content.every(c => c.email === null || c.email === "");
+        client.assert(noneHaveEmail, "Contacts should not have email");
+    });
+    client.log("✓ Filtered contacts without email: " + response.body.content.length);
+%}
+
+### 15. Combined Filters - Customer + Email + Search
+GET {{baseUrl}}/contacts?customerId={{customerId}}&hasEmail=true&search=doe
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Combined filters applied: " + response.body.content.length + " results");
+%}
+
+### 16. Update Contact - Basic Fields
+PUT {{baseUrl}}/contacts/{{contactId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "John Michael Doe",
+  "email": "john.m.doe@acme.com",
+  "title": "Chief Technology Officer"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Name was updated", function() {
+        client.assert(response.body.name === "John Michael Doe", "Name should be updated");
+    });
+    client.log("✓ Updated contact name and title");
+%}
+
+### 17. Update Contact - Change Phone
+PUT {{baseUrl}}/contacts/{{contactId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "phone": "+1-555-9999"
+}
+
+> {%
+    client.test("Phone was updated", function() {
+        client.assert(response.body.phone === "+1-555-9999", "Phone should be updated");
+    });
+    client.log("✓ Updated contact phone");
+%}
+
+### 18. Update Contact - Add Custom Fields
+PUT {{baseUrl}}/contacts/{{contactId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customFields": {
+    "department": "Engineering",
+    "location": "San Francisco",
+    "birthday": "1980-05-15"
+  }
+}
+
+> {%
+    client.test("Custom fields updated", function() {
+        client.assert(response.body.customFields !== null, "Should have custom fields");
+    });
+    client.log("✓ Updated custom fields");
+%}
+
+### 19. Partial Update - Only Email
+PUT {{baseUrl}}/contacts/{{contactId2}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "jane.smith.ceo@acme.com"
+}
+
+> {%
+    client.test("Email was updated", function() {
+        client.assert(response.body.email === "jane.smith.ceo@acme.com", "Email should be updated");
+    });
+    client.log("✓ Partial update successful");
+%}
+
+### 20. Add Email to Contact Without Email
+PUT {{baseUrl}}/contacts/{{noEmailContactId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "email": "alice.brown@acme.com"
+}
+
+> {%
+    client.test("Email was added", function() {
+        client.assert(response.body.email === "alice.brown@acme.com", "Email should be added");
+    });
+    client.log("✓ Added email to contact");
+%}
+
+### 21. Get Contact - Verify Updates
+GET {{baseUrl}}/contacts/{{contactId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Updates persisted", function() {
+        client.assert(response.body.phone === "+1-555-9999", "Phone update should persist");
+        client.assert(response.body.customFields !== null, "Custom fields should persist");
+    });
+    client.log("✓ Verified contact updates persisted");
+%}
+
+### 22. Create Contact for Deletion Test
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Delete Test Contact",
+  "email": "delete@test.com"
+}
+
+> {%
+    client.global.set("deleteContactId", response.body.id);
+    client.log("✓ Created contact for deletion test");
+%}
+
+### 23. Error Test - Create Contact Without Customer ID
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Invalid Contact",
+  "email": "invalid@test.com"
+}
+
+> {%
+    client.test("Should return validation error", function() {
+        client.assert(response.status === 400 || response.status === 422, "Expected validation error");
+    });
+    client.log("✓ Validation error for missing customerId handled");
+%}
+
+### 24. Error Test - Create Contact Without Name
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "email": "noname@test.com"
+}
+
+> {%
+    client.test("Should return validation error", function() {
+        client.assert(response.status === 400 || response.status === 422, "Expected validation error");
+    });
+    client.log("✓ Validation error for missing name handled");
+%}
+
+### 25. Error Test - Get Non-Existent Contact
+GET {{baseUrl}}/contacts/999999
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 404", function() {
+        client.assert(response.status === 404, "Expected 404");
+    });
+    client.log("✓ 404 error handled correctly");
+%}
+
+### 26. Error Test - Update Non-Existent Contact
+PUT {{baseUrl}}/contacts/999999
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Should Fail"
+}
+
+> {%
+    client.test("Status is 404", function() {
+        client.assert(response.status === 404, "Expected 404");
+    });
+    client.log("✓ Update of non-existent contact handled");
+%}
+
+### 27. Error Test - Invalid Email Format
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Invalid Email Test",
+  "email": "not-an-email"
+}
+
+> {%
+    client.test("Should handle invalid email", function() {
+        // May return 400 or create successfully depending on validation
+        client.assert(response.status === 400 || response.status === 201, "Should handle invalid email");
+    });
+    client.log("✓ Invalid email handled: status " + response.status);
+%}
+
+### 28. Edge Case - Very Long Name
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "This Is A Very Long Name That Goes On And On And Might Exceed Some Database Limits If Not Properly Validated",
+  "email": "longname@test.com"
+}
+
+> {%
+    client.log("✓ Long name test: status " + response.status);
+%}
+
+### 29. Edge Case - Special Characters in Name
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "François O'Brien-Smith Jr.",
+  "email": "special@test.com"
+}
+
+> {%
+    client.test("Special characters accepted", function() {
+        client.assert(response.status === 201, "Should accept special characters");
+    });
+    client.log("✓ Special characters in name handled");
+%}
+
+### 30. Cleanup - Note: Contacts usually don't have DELETE endpoint
+### If DELETE exists, uncomment below:
+# DELETE {{baseUrl}}/contacts/{{deleteContactId}}
+# Authorization: Bearer {{accessToken}}

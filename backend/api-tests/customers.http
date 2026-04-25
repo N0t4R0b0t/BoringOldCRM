@@ -1,0 +1,50 @@
+### Create Customer
+# IMPORTANT: Run this FIRST to capture the customerId global variable
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Corp",
+  "status": "active",
+  "customFields": {}
+}
+
+> {%
+    client.global.set("customerId", response.body.id);
+    client.log("Captured customerId: " + response.body.id);
+%}
+
+### List Customers
+GET {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (response.body.content && response.body.content.length > 0) {
+        client.global.set("customerId", response.body.content[0].id);
+        client.log("Auto-captured customerId from list: " + response.body.content[0].id);
+    }
+%}
+
+### Get Customer Details
+GET {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.global.set("customerId", response.body.id);
+%}
+
+### Update Customer
+PUT {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Global",
+  "status": "active",
+  "customFields": {}
+}
+
+### Delete Customer
+DELETE {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}

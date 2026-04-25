@@ -1,0 +1,592 @@
+### ====================================
+### OPPORTUNITIES - Comprehensive API Tests
+### ====================================
+### Prerequisites: Run customers tests first to get customerId
+
+### 0. Ensure we have a customerId
+GET {{baseUrl}}/customers?page=0&size=1
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (!client.global.get("customerId") && response.body.content && response.body.content.length > 0) {
+        client.global.set("customerId", response.body.content[0].id);
+        client.log("✓ Auto-captured customerId: " + response.body.content[0].id);
+    }
+%}
+
+### 1. Create Opportunity - Prospecting Stage
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Enterprise Software Deal",
+  "stage": "prospecting",
+  "value": 100000.00,
+  "probability": 10,
+  "closeDate": "2026-06-30"
+}
+
+> {%
+    client.test("Status is 201", function() {
+        client.assert(response.status === 201, "Expected 201");
+    });
+    client.test("Response has id", function() {
+        client.assert(response.body.id !== undefined, "Response should have id");
+    });
+    client.global.set("opportunityId", response.body.id);
+    client.log("✓ Created opportunity with ID: " + response.body.id);
+%}
+
+### 2. Create Opportunity - Discovery Stage
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Cloud Migration Project",
+  "stage": "discovery",
+  "value": 250000.00,
+  "probability": 25,
+  "closeDate": "2026-08-15"
+}
+
+> {%
+    client.global.set("opportunityId2", response.body.id);
+    client.log("✓ Created discovery stage opportunity, ID: " + response.body.id);
+%}
+
+### 3. Create Opportunity - Proposal Stage
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Digital Transformation",
+  "stage": "proposal",
+  "value": 500000.00,
+  "probability": 50,
+  "closeDate": "2026-09-30"
+}
+
+> {%
+    client.global.set("opportunityId3", response.body.id);
+    client.log("✓ Created proposal stage opportunity, ID: " + response.body.id);
+%}
+
+### 4. Create Opportunity - Negotiation Stage
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Annual License Renewal",
+  "stage": "negotiation",
+  "value": 150000.00,
+  "probability": 75,
+  "closeDate": "2026-04-30"
+}
+
+> {%
+    client.global.set("negotiationOppId", response.body.id);
+    client.log("✓ Created negotiation stage opportunity, ID: " + response.body.id);
+%}
+
+### 5. Create Opportunity - Closed Won
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Small Consulting Gig",
+  "stage": "closed-won",
+  "value": 25000.00,
+  "probability": 100,
+  "closeDate": "2026-03-01"
+}
+
+> {%
+    client.global.set("wonOppId", response.body.id);
+    client.log("✓ Created closed-won opportunity, ID: " + response.body.id);
+%}
+
+### 6. Create Opportunity - Closed Lost
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Lost to Competitor",
+  "stage": "closed-lost",
+  "value": 75000.00,
+  "probability": 0,
+  "closeDate": "2026-02-15"
+}
+
+> {%
+    client.global.set("lostOppId", response.body.id);
+    client.log("✓ Created closed-lost opportunity, ID: " + response.body.id);
+%}
+
+### 7. Create Opportunity - With Custom Fields
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Strategic Partnership",
+  "stage": "discovery",
+  "value": 1000000.00,
+  "probability": 30,
+  "closeDate": "2026-12-31",
+  "customFields": {
+    "leadSource": "Conference",
+    "competitors": ["CompanyA", "CompanyB"],
+    "priority": "high",
+    "nextSteps": "Schedule executive meeting"
+  }
+}
+
+> {%
+    client.global.set("customFieldsOppId", response.body.id);
+    client.log("✓ Created opportunity with custom fields, ID: " + response.body.id);
+%}
+
+### 8. Create Opportunity - Minimal Fields
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Quick Win Deal",
+  "stage": "prospecting"
+}
+
+> {%
+    client.test("Created with minimal fields", function() {
+        client.assert(response.status === 201, "Should accept minimal fields");
+    });
+    client.log("✓ Created minimal opportunity");
+%}
+
+### 9. Get Opportunity by ID
+GET {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Opportunity name matches", function() {
+        client.assert(response.body.name === "Enterprise Software Deal", "Name should match");
+    });
+    client.test("Has value and stage", function() {
+        client.assert(response.body.value === 100000.00, "Value should match");
+        client.assert(response.body.stage === "prospecting", "Stage should match");
+    });
+    client.log("✓ Retrieved opportunity: " + response.body.name);
+%}
+
+### 10. List All Opportunities - Default Pagination
+GET {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has content array", function() {
+        client.assert(Array.isArray(response.body.content), "Content should be array");
+    });
+    client.log("✓ Listed opportunities, total: " + response.body.totalElements);
+%}
+
+### 11. List Opportunities - With Pagination
+GET {{baseUrl}}/opportunities?page=0&size=5
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Page size is respected", function() {
+        client.assert(response.body.pageSize === 5, "Page size should be 5");
+    });
+    client.log("✓ Paginated list, size: " + response.body.content.length);
+%}
+
+### 12. List Opportunities - Sorted by Value (DESC)
+GET {{baseUrl}}/opportunities?sortBy=value&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Results are sorted by value", function() {
+        if (response.body.content.length > 1) {
+            // Filter out null values for comparison
+            const withValues = response.body.content.filter(o => o.value !== null && o.value !== undefined);
+            if (withValues.length > 1) {
+                client.assert(
+                    withValues[0].value >= withValues[1].value,
+                    "Should be sorted by value descending"
+                );
+            }
+        }
+    });
+    client.log("✓ Opportunities sorted by value DESC");
+%}
+
+### 13. List Opportunities - Sorted by Close Date
+GET {{baseUrl}}/opportunities?sortBy=closeDate&sortOrder=asc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Opportunities sorted by closeDate ASC");
+%}
+
+### 14. Search Opportunities - By Name
+GET {{baseUrl}}/opportunities?search=Enterprise
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Search results contain keyword", function() {
+        if (response.body.content.length > 0) {
+            const hasKeyword = response.body.content.some(o =>
+                o.name.toLowerCase().includes("enterprise")
+            );
+            client.assert(hasKeyword, "Results should contain 'enterprise'");
+        }
+    });
+    client.log("✓ Search by 'Enterprise': " + response.body.content.length + " results");
+%}
+
+### 15. Filter Opportunities - By Stage (Prospecting)
+GET {{baseUrl}}/opportunities?stage=prospecting
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results are prospecting stage", function() {
+        const allMatch = response.body.content.every(o => o.stage === "prospecting");
+        client.assert(allMatch, "All opportunities should be in prospecting stage");
+    });
+    client.log("✓ Filtered by stage 'prospecting': " + response.body.content.length);
+%}
+
+### 16. Filter Opportunities - By Stage (Discovery)
+GET {{baseUrl}}/opportunities?stage=discovery
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by stage 'discovery': " + response.body.content.length);
+%}
+
+### 17. Filter Opportunities - By Stage (Proposal)
+GET {{baseUrl}}/opportunities?stage=proposal
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by stage 'proposal': " + response.body.content.length);
+%}
+
+### 18. Filter Opportunities - By Stage (Negotiation)
+GET {{baseUrl}}/opportunities?stage=negotiation
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by stage 'negotiation': " + response.body.content.length);
+%}
+
+### 19. Filter Opportunities - By Stage (Closed-Won)
+GET {{baseUrl}}/opportunities?stage=closed-won
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by stage 'closed-won': " + response.body.content.length);
+%}
+
+### 20. Filter Opportunities - By Stage (Closed-Lost)
+GET {{baseUrl}}/opportunities?stage=closed-lost
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Filtered by stage 'closed-lost': " + response.body.content.length);
+%}
+
+### 21. Filter Opportunities - By Customer ID
+GET {{baseUrl}}/opportunities?customerId={{customerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results belong to customer", function() {
+        const allMatch = response.body.content.every(o => o.customerId == client.global.get("customerId"));
+        client.assert(allMatch, "All opportunities should belong to customer");
+    });
+    client.log("✓ Filtered by customerId: " + response.body.content.length + " opportunities");
+%}
+
+### 22. Combined Filters - Customer + Stage + Sort
+GET {{baseUrl}}/opportunities?customerId={{customerId}}&stage=discovery&sortBy=value&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Combined filters applied: " + response.body.content.length + " results");
+%}
+
+### 23. Update Opportunity - Move to Next Stage
+PUT {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "stage": "discovery",
+  "probability": 25
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Stage was updated", function() {
+        client.assert(response.body.stage === "discovery", "Stage should be updated");
+    });
+    client.log("✓ Moved opportunity to discovery stage");
+%}
+
+### 24. Update Opportunity - Increase Value
+PUT {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "value": 125000.00,
+  "probability": 30
+}
+
+> {%
+    client.test("Value was updated", function() {
+        client.assert(response.body.value === 125000.00, "Value should be updated");
+    });
+    client.log("✓ Updated opportunity value");
+%}
+
+### 25. Update Opportunity - Change Close Date
+PUT {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "closeDate": "2026-07-31"
+}
+
+> {%
+    client.test("Close date was updated", function() {
+        client.assert(response.body.closeDate === "2026-07-31", "Close date should be updated");
+    });
+    client.log("✓ Updated close date");
+%}
+
+### 26. Update Opportunity - Add Custom Fields
+PUT {{baseUrl}}/opportunities/{{opportunityId2}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customFields": {
+    "stakeholders": ["CTO", "CEO", "CFO"],
+    "budget": "approved",
+    "painPoints": "Legacy systems, manual processes"
+  }
+}
+
+> {%
+    client.test("Custom fields updated", function() {
+        client.assert(response.body.customFields !== null, "Should have custom fields");
+    });
+    client.log("✓ Updated custom fields");
+%}
+
+### 27. Update Opportunity - Close as Won
+PUT {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "stage": "closed-won",
+  "probability": 100
+}
+
+> {%
+    client.test("Opportunity closed as won", function() {
+        client.assert(response.body.stage === "closed-won", "Stage should be closed-won");
+    });
+    client.log("✓ Closed opportunity as won");
+%}
+
+### 28. Update Opportunity - Reopen Closed Deal
+PUT {{baseUrl}}/opportunities/{{wonOppId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "stage": "negotiation",
+  "probability": 80
+}
+
+> {%
+    client.test("Opportunity reopened", function() {
+        client.assert(response.body.stage === "negotiation", "Stage should be negotiation");
+    });
+    client.log("✓ Reopened closed opportunity");
+%}
+
+### 29. Partial Update - Only Name
+PUT {{baseUrl}}/opportunities/{{opportunityId3}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Digital Transformation Initiative - Phase 1"
+}
+
+> {%
+    client.test("Name was updated", function() {
+        client.assert(response.body.name.includes("Phase 1"), "Name should be updated");
+    });
+    client.log("✓ Partial update successful");
+%}
+
+### 30. Get Opportunity - Verify Updates
+GET {{baseUrl}}/opportunities/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Updates persisted", function() {
+        client.assert(response.body.stage === "closed-won", "Stage update should persist");
+        client.assert(response.body.value === 125000.00, "Value update should persist");
+    });
+    client.log("✓ Verified opportunity updates persisted");
+%}
+
+### 31. Error Test - Create Opportunity Without Customer ID
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Invalid Opportunity",
+  "stage": "prospecting"
+}
+
+> {%
+    client.test("Should return validation error", function() {
+        client.assert(response.status === 400 || response.status === 422, "Expected validation error");
+    });
+    client.log("✓ Validation error for missing customerId handled");
+%}
+
+### 32. Error Test - Create Opportunity Without Name
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "stage": "prospecting"
+}
+
+> {%
+    client.test("Should return validation error", function() {
+        client.assert(response.status === 400 || response.status === 422, "Expected validation error");
+    });
+    client.log("✓ Validation error for missing name handled");
+%}
+
+### 33. Error Test - Invalid Stage Value
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Test Invalid Stage",
+  "stage": "invalid-stage"
+}
+
+> {%
+    client.test("Should handle invalid stage", function() {
+        client.assert(response.status === 400 || response.status === 201, "Should handle invalid stage");
+    });
+    client.log("✓ Invalid stage handled: status " + response.status);
+%}
+
+### 34. Error Test - Negative Value
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Test Negative Value",
+  "stage": "prospecting",
+  "value": -1000.00
+}
+
+> {%
+    client.test("Should handle negative value", function() {
+        client.assert(response.status === 400 || response.status === 201, "Should handle negative value");
+    });
+    client.log("✓ Negative value handled: status " + response.status);
+%}
+
+### 35. Error Test - Probability Out of Range
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customerId}},
+  "name": "Test Invalid Probability",
+  "stage": "prospecting",
+  "probability": 150
+}
+
+> {%
+    client.test("Should handle invalid probability", function() {
+        client.assert(response.status === 400 || response.status === 201, "Should handle probability > 100");
+    });
+    client.log("✓ Invalid probability handled: status " + response.status);
+%}
+
+### 36. Error Test - Get Non-Existent Opportunity
+GET {{baseUrl}}/opportunities/999999
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 404", function() {
+        client.assert(response.status === 404, "Expected 404");
+    });
+    client.log("✓ 404 error handled correctly");
+%}
+
+### 37. Pipeline Value Calculation - Get All Open Opportunities
+GET {{baseUrl}}/opportunities?stage=prospecting,discovery,proposal,negotiation
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (response.status === 200) {
+        let totalValue = 0;
+        let weightedValue = 0;
+        response.body.content.forEach(opp => {
+            totalValue += opp.value || 0;
+            weightedValue += (opp.value || 0) * ((opp.probability || 0) / 100);
+        });
+        client.log("✓ Pipeline Analysis:");
+        client.log("  Total Pipeline Value: $" + totalValue.toLocaleString());
+        client.log("  Weighted Pipeline Value: $" + weightedValue.toLocaleString());
+        client.log("  Number of Opportunities: " + response.body.content.length);
+    }
+%}

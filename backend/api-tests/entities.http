@@ -1,0 +1,76 @@
+### Ensure customerId (pick first page item if not set)
+GET {{baseUrl}}/customers?page=0&size=1
+Authorization: Bearer {{accessToken}}
+
+> {%
+    if (!client.global.get("customerId") && response.body.content && response.body.content.length > 0) {
+        client.global.set("customerId", response.body.content[0].id);
+        client.log("Picked existing customerId: " + response.body.content[0].id);
+    }
+%}
+
+### Create Contact
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "name": "John Doe",
+  "email": "john@acme.com",
+  "phone": "+1-555-0199",
+  "title": "Purchasing Manager"
+}
+
+> {%
+    client.global.set("contactId", response.body.id);
+    client.log("Captured contactId: " + response.body.id);
+%}
+
+### List Contacts
+GET {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+
+### Create Opportunity
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": "{{customerId}}",
+  "name": "Big Acme Deal",
+  "stage": "discovery",
+  "value": 50000.00
+}
+
+> {%
+    client.global.set("opportunityId", response.body.id);
+    client.log("Captured opportunityId: " + response.body.id);
+%}
+
+### List Opportunities
+GET {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+
+### Create Activity
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Intro call",
+  "type": "call",
+  "dueAt": "2026-03-01T10:00:00Z",
+  "description": "Initial discovery call",
+  "relatedType": "customer",
+  "relatedId": "{{customerId}}"
+}
+
+> {%
+    client.global.set("activityId", response.body.id);
+    client.log("Captured activityId: " + response.body.id);
+%}
+
+### List Activities
+GET {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}

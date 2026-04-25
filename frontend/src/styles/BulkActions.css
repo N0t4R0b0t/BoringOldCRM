@@ -1,0 +1,67 @@
+@reference "tailwindcss";
+
+@layer components {
+  .bulk-actions-container {
+    @apply bg-white border border-gray-200 rounded-lg px-4 py-3 mb-5
+           flex items-center justify-between shadow-sm
+           animate-[slideDown_0.2s_ease-out]
+           dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .bulk-actions-info {
+    @apply flex items-center gap-5;
+  }
+
+  .selection-count {
+    @apply font-semibold text-indigo-600 text-sm dark:text-indigo-400;
+  }
+
+  .bulk-actions-menu {
+    @apply relative;
+  }
+
+  .bulk-actions-toggle {
+    @apply px-4 py-2 bg-indigo-600 text-white border-none rounded-md cursor-pointer
+           font-medium text-sm transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed
+           hover:enabled:bg-indigo-700 hover:enabled:-translate-y-px hover:enabled:shadow-md;
+  }
+
+  .bulk-actions-dropdown {
+    @apply absolute top-full right-0 bg-white border border-gray-300 rounded-lg
+           shadow-lg min-w-40 mt-1 z-10 overflow-hidden
+           animate-[popIn_0.15s_ease-out]
+           dark:bg-gray-800 dark:border-gray-600;
+  }
+
+  .action-item {
+    @apply block w-full px-4 py-2.5 bg-transparent border-none text-left cursor-pointer
+           text-sm text-gray-900 transition-all duration-200
+           border-b border-gray-100 last:border-b-0
+           hover:enabled:bg-gray-100 hover:enabled:text-indigo-600
+           disabled:opacity-50 disabled:cursor-not-allowed
+           dark:text-gray-200 dark:border-gray-700 dark:hover:enabled:bg-gray-700;
+  }
+
+  .action-item.action-danger:hover:not(:disabled) {
+    @apply bg-red-50 text-red-600 dark:bg-red-900/20;
+  }
+
+  .bulk-actions-progress {
+    @apply flex items-center gap-3 text-indigo-600 font-medium dark:text-indigo-400;
+  }
+
+  /* Spinner — uses Tailwind's built-in animate-spin instead of custom @keyframes */
+  .spinner {
+    @apply w-4 h-4 border-2 border-gray-200 border-t-indigo-600 rounded-full animate-spin;
+  }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: scale(0.95) translateY(-8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}

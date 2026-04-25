@@ -1,0 +1,29 @@
+services:
+
+  registry:
+    image: registry:2
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+    volumes:
+      - registry-data:/var/lib/registry
+    environment:
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+
+  # Lightweight web UI — browse/delete images at http://<host>:5001
+  registry-ui:
+    image: joxit/docker-registry-ui:latest
+    restart: unless-stopped
+    ports:
+      - "5001:80"
+    environment:
+      SINGLE_REGISTRY: "true"
+      REGISTRY_TITLE: "BOCRM Registry"
+      NGINX_PROXY_PASS_URL: "http://registry:5000"
+      SHOW_CONTENT_DIGEST: "true"
+      DELETE_IMAGES: "true"
+    depends_on:
+      - registry
+
+volumes:
+  registry-data:

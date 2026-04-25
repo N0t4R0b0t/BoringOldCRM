@@ -1,0 +1,54 @@
+@reference "tailwindcss";
+
+@layer components {
+  .login-page {
+    @apply flex items-center justify-center min-h-screen;
+    background: linear-gradient(135deg, #0f62fe 0%, #0043ce 100%);
+  }
+
+  .login-container {
+    @apply w-full max-w-sm px-4;
+  }
+
+  .login-box {
+    @apply bg-white rounded-lg shadow-2xl p-8 text-gray-900;
+  }
+
+  .login-title {
+    @apply text-3xl font-bold text-blue-600 mb-2;
+  }
+
+  .login-subtitle {
+    @apply text-sm text-gray-600 mb-6;
+  }
+
+  .login-form {
+    @apply flex flex-col gap-4;
+  }
+
+  .submit-btn {
+    @apply w-full py-3 text-white border-none rounded-lg font-medium
+           cursor-pointer transition-colors duration-150 mt-2 text-center
+           disabled:opacity-70 disabled:cursor-not-allowed;
+    background-color: #0f62fe;
+  }
+  .submit-btn:hover:not(:disabled) {
+    background-color: #0043ce;
+  }
+
+  .error-message {
+    @apply bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg mb-4;
+  }
+
+  .demo-hint {
+    @apply mt-6 pt-6 border-t border-gray-200 text-center text-gray-600 text-xs;
+  }
+
+  .demo-hint p {
+    @apply mb-2;
+  }
+
+  .demo-hint code {
+    @apply block bg-gray-100 px-3 py-2 rounded font-mono text-gray-900;
+  }
+}

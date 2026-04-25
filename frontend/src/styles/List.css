@@ -1,0 +1,43 @@
+@reference "tailwindcss";
+
+@layer components {
+  .list-container {
+    @apply bg-white border border-gray-200 rounded-lg overflow-hidden dark:bg-gray-800 dark:border-gray-700;
+  }
+
+  .list-toolbar {
+    @apply flex items-center justify-between gap-4 mb-4 flex-wrap;
+  }
+
+  .list-table {
+    @apply w-full border-collapse;
+  }
+
+  .list-table thead {
+    @apply bg-gray-50 border-b border-gray-200 dark:bg-gray-700 dark:border-gray-600;
+  }
+
+  .list-table th {
+    @apply p-4 text-left font-semibold text-gray-900 text-sm dark:text-gray-200;
+  }
+
+  .list-table tbody tr {
+    @apply border-b border-gray-200 transition-colors duration-200 dark:border-gray-700;
+  }
+
+  .list-table tbody tr:hover {
+    @apply bg-gray-50 dark:bg-gray-700;
+  }
+
+  .list-table td {
+    @apply p-4 text-sm dark:text-gray-300;
+  }
+
+  .list-table a {
+    @apply text-blue-600 no-underline transition-colors duration-200 hover:text-blue-700 hover:underline dark:text-blue-400;
+  }
+
+  .list-table .btn {
+    @apply mr-2;
+  }
+}

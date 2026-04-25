@@ -1,0 +1,272 @@
+@reference "tailwindcss";
+
+@layer components {
+  /* ── Advanced filters modal ──────────────────────────────── */
+  .advanced-filters-modal {
+    @apply fixed inset-0 bg-black/50 flex items-center justify-center z-50;
+  }
+
+  .advanced-filters-content {
+    @apply bg-white rounded-xl shadow-2xl w-[90%] max-w-xl max-h-[80vh] flex flex-col
+           animate-[slideUp_0.3s_ease-out]
+           dark:bg-gray-800;
+  }
+
+  .advanced-filters-header {
+    @apply flex justify-between items-center px-5 py-4 border-b border-gray-200 dark:border-gray-700;
+  }
+
+  .advanced-filters-header h3 {
+    @apply m-0 text-lg font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  /* Reuses .close-btn from Filter.css — both coexist without conflict */
+
+  .advanced-filters-body {
+    @apply flex-1 px-5 py-4 overflow-y-auto;
+  }
+
+  .combine-with-selector {
+    @apply mb-5;
+  }
+
+  .combine-with-selector label {
+    @apply block mb-2 font-medium text-gray-900 dark:text-gray-200;
+  }
+
+  .combine-with-selector select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md text-sm
+           transition-colors duration-200 focus:outline-none focus:border-blue-600
+           dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+  }
+
+  .filter-clauses {
+    @apply flex flex-col gap-3 mb-5;
+  }
+
+  .filter-clause {
+    @apply flex gap-2 items-end;
+  }
+
+  .field-select,
+  .operator-select,
+  .value-input {
+    @apply px-3 py-2 border border-gray-300 rounded-md text-sm
+           focus:outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-600/10
+           dark:bg-gray-700 dark:border-gray-600 dark:text-white;
+    transition: border-color 0.2s;
+  }
+
+  .field-select    { flex: 1.5; min-width: 120px; }
+  .operator-select { flex: 1;   min-width: 100px; }
+  .value-input     { flex: 1.5; min-width: 120px; }
+
+  .remove-clause-btn {
+    @apply px-2.5 py-1.5 bg-red-50 border border-red-200 rounded text-red-700
+           cursor-pointer text-sm font-medium transition-all duration-200
+           hover:bg-red-100 hover:border-red-300;
+  }
+
+  .add-clause-btn {
+    @apply w-full px-4 py-2.5 bg-blue-50 border border-dashed border-blue-500 rounded-md
+           text-blue-600 cursor-pointer font-medium transition-all duration-200
+           hover:bg-blue-100 dark:bg-blue-900/20 dark:border-blue-500 dark:text-blue-400;
+  }
+
+  .advanced-filters-footer {
+    @apply flex gap-3 px-5 py-4 border-t border-gray-200 justify-end dark:border-gray-700;
+  }
+
+  /* ── Advanced search ─────────────────────────────────────── */
+  .advanced-search-container {
+    @apply flex flex-col gap-3 mb-5;
+  }
+
+  .advanced-search-bar {
+    @apply flex gap-3 items-center;
+  }
+
+  .search-input-wrapper {
+    @apply flex-1 relative flex items-center bg-white border border-gray-300 rounded-lg
+           overflow-hidden transition-shadow duration-200
+           focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/10
+           dark:bg-gray-800 dark:border-gray-600;
+  }
+
+  .advanced-search-input {
+    @apply flex-1 px-3.5 py-2.5 border-none text-sm font-[inherit] bg-transparent
+           focus:outline-none dark:text-white;
+  }
+
+  .search-icon-btn,
+  .clear-search-btn {
+    @apply bg-transparent border-none px-3 py-2 cursor-pointer text-base text-gray-400
+           transition-colors duration-200 hover:text-blue-500;
+  }
+
+  .filter-toggle-btn {
+    @apply relative bg-white border border-gray-300 px-3.5 py-2.5 rounded-lg cursor-pointer
+           flex items-center gap-1.5 transition-all duration-200 font-medium text-gray-500
+           hover:border-blue-500 hover:text-blue-500
+           dark:bg-gray-800 dark:border-gray-600 dark:text-gray-400;
+  }
+
+  .filter-toggle-btn.active {
+    @apply bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400;
+  }
+
+  .filter-icon { @apply text-lg; }
+
+  .filter-badge {
+    @apply inline-flex items-center justify-center w-5 h-5 bg-red-500 text-white
+           rounded-full text-[11px] font-bold;
+  }
+
+  /* Active filter chips */
+  .active-filters {
+    @apply flex items-center gap-3 px-3 py-2.5 bg-green-50 border border-green-200
+           rounded-lg flex-wrap dark:bg-green-900/20 dark:border-green-800;
+  }
+
+  .filters-label {
+    @apply text-xs font-semibold text-green-800 uppercase tracking-wide whitespace-nowrap
+           dark:text-green-300;
+  }
+
+  .filter-tags {
+    @apply flex gap-2 flex-wrap items-center;
+  }
+
+  .filter-tag {
+    @apply flex items-center gap-2 bg-white border border-green-300 rounded-md
+           px-2.5 py-1.5 text-xs animate-[slideIn_0.2s_ease-out]
+           dark:bg-gray-800 dark:border-green-700;
+  }
+
+  .filter-tag-content {
+    @apply flex gap-1 items-center;
+  }
+
+  .filter-category {
+    @apply font-semibold text-green-800 dark:text-green-300;
+  }
+
+  .filter-value {
+    @apply text-gray-500 dark:text-gray-400;
+  }
+
+  .filter-tag-remove {
+    @apply bg-transparent border-none text-green-300 cursor-pointer text-xs p-0
+           transition-colors duration-200 hover:text-green-800 dark:hover:text-green-200;
+  }
+
+  /* Filter panel (dropdown) */
+  .filter-panel-dropdown {
+    @apply bg-white border border-gray-300 rounded-lg overflow-hidden shadow-sm
+           animate-[slideDown_0.2s_ease-out] dark:bg-gray-800 dark:border-gray-600;
+  }
+
+  .filter-panel-header {
+    @apply flex justify-between items-center px-4 py-3.5 border-b border-gray-200
+           bg-gray-50 dark:bg-gray-700 dark:border-gray-600;
+  }
+
+  .filter-panel-header h3 {
+    @apply m-0 text-sm font-semibold text-gray-900 dark:text-gray-100;
+  }
+
+  .close-filter-btn {
+    @apply bg-transparent border-none text-lg text-gray-400 cursor-pointer px-2 py-1
+           rounded transition-all duration-200 hover:bg-gray-200 hover:text-gray-900
+           dark:hover:bg-gray-600 dark:hover:text-gray-100;
+  }
+
+  .filter-categories {
+    @apply p-3 max-h-96 overflow-y-auto;
+  }
+
+  .filter-category-group {
+    @apply mb-2;
+  }
+
+  .category-header {
+    @apply w-full flex justify-between items-center px-3 py-2.5 bg-gray-50 border
+           border-gray-200 rounded-md cursor-pointer transition-all duration-200
+           font-medium text-gray-700 hover:bg-gray-100 hover:border-gray-300
+           dark:bg-gray-700 dark:border-gray-600 dark:text-gray-300;
+  }
+
+  .category-header.open {
+    @apply bg-blue-50 border-blue-500 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400;
+  }
+
+  .category-title { @apply text-sm; }
+
+  .category-toggle {
+    @apply text-xs transition-transform duration-200;
+  }
+
+  .category-options {
+    @apply flex flex-col gap-1.5 mt-2 px-3 py-2 bg-gray-50/50 rounded-md
+           animate-[expand_0.2s_ease-out] dark:bg-gray-700/50;
+  }
+
+  .option-btn {
+    @apply flex items-center gap-2 w-full px-2.5 py-2 bg-transparent border border-transparent
+           rounded cursor-pointer text-left text-sm text-gray-600 transition-all duration-200
+           hover:bg-white hover:border-gray-200 hover:text-blue-600
+           dark:text-gray-300 dark:hover:bg-gray-800;
+  }
+
+  .option-radio {
+    @apply flex items-center justify-center w-4 h-4 text-gray-400 text-xs;
+  }
+
+  .option-btn:hover .option-radio { @apply text-blue-600; }
+
+  .option-label { @apply flex-1; }
+
+  .no-filters {
+    @apply px-5 py-4 text-center text-gray-400 text-sm;
+  }
+
+  .filter-panel-footer {
+    @apply flex justify-end px-4 py-3 border-t border-gray-200 bg-gray-50
+           dark:bg-gray-700 dark:border-gray-600;
+  }
+
+  .clear-all-btn {
+    @apply px-3.5 py-2 bg-red-500 text-white border-none rounded-md cursor-pointer
+           text-xs font-medium transition-all duration-200
+           hover:-translate-y-px hover:bg-red-600;
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .advanced-search-bar { @apply flex-wrap; }
+    .search-input-wrapper { @apply order-1 w-full; }
+    .filter-toggle-btn    { @apply order-2 w-full justify-center; }
+    .active-filters       { @apply flex-col items-start; }
+    .filters-label, .filter-tags { @apply w-full; }
+  }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-10px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes expand {
+  from { opacity: 0; max-height: 0; }
+  to   { opacity: 1; max-height: 500px; }
+}

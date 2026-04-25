@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+  <!-- Background -->
+  <rect width="40" height="40" rx="6" fill="#0f62fe"/>
+
+  <!-- B letterform — white fill, evenodd cuts out the two counters -->
+  <path fill-rule="evenodd" fill="white" d="
+    M 7,5 H 22 C 34,5 34,18 22,18 C 35,18 35,35 22,35 H 7 Z
+    M 12,10 H 21 C 27,10 27,17 21,17 H 12 Z
+    M 12,21 H 22 C 29,21 29,30 22,30 H 12 Z
+  "/>
+
+  <!-- IBM-style horizontal stripe cuts (blue rects over the white letterform) -->
+  <rect x="0" y="13.5" width="40" height="2.5" fill="#0f62fe"/>
+  <rect x="0" y="19"   width="40" height="2.5" fill="#0f62fe"/>
+  <rect x="0" y="26.5" width="40" height="2.5" fill="#0f62fe"/>
+</svg>

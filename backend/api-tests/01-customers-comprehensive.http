@@ -1,0 +1,357 @@
+### ====================================
+### CUSTOMERS - Comprehensive API Tests
+### ====================================
+
+### 1. Create Customer - Basic
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Corporation",
+  "status": "active"
+}
+
+> {%
+    client.test("Status is 201", function() {
+        client.assert(response.status === 201, "Expected 201 but got " + response.status);
+    });
+    client.test("Response has id", function() {
+        client.assert(response.body.id !== undefined, "Response should have id");
+    });
+    client.global.set("customerId", response.body.id);
+    client.log("✓ Created customer with ID: " + response.body.id);
+%}
+
+### 2. Create Customer - With Custom Fields
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "TechStart Inc",
+  "status": "active",
+  "customFields": {
+    "industry": "Technology",
+    "employees": 50,
+    "website": "https://techstart.example.com"
+  }
+}
+
+> {%
+    client.test("Status is 201", function() {
+        client.assert(response.status === 201, "Expected 201");
+    });
+    client.global.set("customerId2", response.body.id);
+    client.log("✓ Created customer with custom fields, ID: " + response.body.id);
+%}
+
+### 3. Create Customer - Inactive Status
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Old Corp",
+  "status": "inactive"
+}
+
+> {%
+    client.global.set("inactiveCustomerId", response.body.id);
+    client.log("✓ Created inactive customer, ID: " + response.body.id);
+%}
+
+### 4. Get Customer by ID
+GET {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Customer name matches", function() {
+        client.assert(response.body.name === "Acme Corporation", "Name should match");
+    });
+    client.log("✓ Retrieved customer: " + response.body.name);
+%}
+
+### 5. List All Customers - Default Pagination
+GET {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has content array", function() {
+        client.assert(Array.isArray(response.body.content), "Content should be array");
+    });
+    client.test("Has pagination info", function() {
+        client.assert(response.body.totalElements !== undefined, "Should have totalElements");
+        client.assert(response.body.totalPages !== undefined, "Should have totalPages");
+    });
+    client.log("✓ Listed customers, total: " + response.body.totalElements);
+%}
+
+### 6. List Customers - With Pagination
+GET {{baseUrl}}/customers?page=0&size=5
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Page size is respected", function() {
+        client.assert(response.body.pageSize === 5, "Page size should be 5");
+    });
+    client.log("✓ Paginated list, size: " + response.body.content.length);
+%}
+
+### 7. List Customers - Sorted by Name Ascending
+GET {{baseUrl}}/customers?sortBy=name&sortOrder=asc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Results are sorted", function() {
+        if (response.body.content.length > 1) {
+            client.assert(
+                response.body.content[0].name <= response.body.content[1].name,
+                "Should be sorted ascending"
+            );
+        }
+    });
+    client.log("✓ Customers sorted by name ASC");
+%}
+
+### 8. List Customers - Sorted by Created Date Descending
+GET {{baseUrl}}/customers?sortBy=createdAt&sortOrder=desc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Customers sorted by createdAt DESC");
+%}
+
+### 9. Search Customers - By Name
+GET {{baseUrl}}/customers?search=Acme
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Search results contain keyword", function() {
+        if (response.body.content.length > 0) {
+            const hasAcme = response.body.content.some(c =>
+                c.name.toLowerCase().includes("acme")
+            );
+            client.assert(hasAcme, "Results should contain 'acme'");
+        }
+    });
+    client.log("✓ Search by 'Acme': " + response.body.content.length + " results");
+%}
+
+### 10. Filter Customers - By Status (Active)
+GET {{baseUrl}}/customers?status=active
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results are active", function() {
+        const allActive = response.body.content.every(c => c.status === "active");
+        client.assert(allActive, "All customers should be active");
+    });
+    client.log("✓ Filtered active customers: " + response.body.content.length);
+%}
+
+### 11. Filter Customers - By Status (Inactive)
+GET {{baseUrl}}/customers?status=inactive
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("All results are inactive", function() {
+        const allInactive = response.body.content.every(c => c.status === "inactive");
+        client.assert(allInactive, "All customers should be inactive");
+    });
+    client.log("✓ Filtered inactive customers: " + response.body.content.length);
+%}
+
+### 12. Combined Filters - Search + Status + Sort
+GET {{baseUrl}}/customers?search=corp&status=active&sortBy=name&sortOrder=asc
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Combined filters applied");
+%}
+
+### 13. Update Customer - Basic Fields
+PUT {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Global Corporation",
+  "status": "active"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Name was updated", function() {
+        client.assert(response.body.name === "Acme Global Corporation", "Name should be updated");
+    });
+    client.log("✓ Updated customer name");
+%}
+
+### 14. Update Customer - Change Status
+PUT {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "inactive"
+}
+
+> {%
+    client.test("Status was updated", function() {
+        client.assert(response.body.status === "inactive", "Status should be inactive");
+    });
+    client.log("✓ Updated customer status to inactive");
+%}
+
+### 15. Update Customer - Add/Update Custom Fields
+PUT {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customFields": {
+    "industry": "Manufacturing",
+    "revenue": 5000000,
+    "founded": "1995"
+  }
+}
+
+> {%
+    client.test("Custom fields updated", function() {
+        client.assert(response.body.customFields !== null, "Should have custom fields");
+    });
+    client.log("✓ Updated custom fields");
+%}
+
+### 16. Partial Update - Only Name
+PUT {{baseUrl}}/customers/{{customerId2}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "TechStart Global Inc"
+}
+
+> {%
+    client.test("Name was updated", function() {
+        client.assert(response.body.name === "TechStart Global Inc", "Name should be updated");
+    });
+    client.log("✓ Partial update successful");
+%}
+
+### 17. Get Customer - Verify Updates
+GET {{baseUrl}}/customers/{{customerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Updates persisted", function() {
+        client.assert(response.body.customFields !== null, "Custom fields should be present");
+    });
+    client.log("✓ Verified customer updates persisted");
+%}
+
+### 18. Create Multiple Customers for Testing
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Beta Solutions",
+  "status": "active"
+}
+
+> {%
+    client.global.set("deleteCustomerId", response.body.id);
+    client.log("✓ Created customer for deletion test");
+%}
+
+### 19. Delete Customer
+DELETE {{baseUrl}}/customers/{{deleteCustomerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 204", function() {
+        client.assert(response.status === 204, "Expected 204 No Content");
+    });
+    client.log("✓ Customer deleted successfully");
+%}
+
+### 20. Verify Customer Deleted - Should Return 404
+GET {{baseUrl}}/customers/{{deleteCustomerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 404", function() {
+        client.assert(response.status === 404, "Expected 404 for deleted customer");
+    });
+    client.log("✓ Confirmed customer was deleted");
+%}
+
+### 21. Error Test - Create Customer Without Name
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "status": "active"
+}
+
+> {%
+    client.test("Should return validation error", function() {
+        client.assert(response.status === 400 || response.status === 422, "Expected validation error");
+    });
+    client.log("✓ Validation error handled correctly");
+%}
+
+### 22. Error Test - Get Non-Existent Customer
+GET {{baseUrl}}/customers/999999
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 404", function() {
+        client.assert(response.status === 404, "Expected 404");
+    });
+    client.log("✓ 404 error handled correctly");
+%}
+
+### 23. Error Test - Unauthorized Access
+GET {{baseUrl}}/customers
+Authorization: Bearer invalid_token_here
+
+> {%
+    client.test("Status is 401 or 403", function() {
+        client.assert(response.status === 401 || response.status === 403, "Expected 401 or 403 for invalid token");
+    });
+    client.log("✓ Unauthorized access blocked with status " + response.status);
+%}
+
+### 24. Edge Case - Empty Search
+GET {{baseUrl}}/customers?search=
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Empty search returns all", function() {
+        client.assert(response.status === 200, "Should return 200");
+    });
+    client.log("✓ Empty search handled");
+%}
+
+### 25. Edge Case - Invalid Status Filter
+GET {{baseUrl}}/customers?status=invalid_status
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Invalid status handled", function() {
+        client.assert(response.status === 200, "Should return 200 with empty results or all results");
+    });
+    client.log("✓ Invalid filter handled");
+%}

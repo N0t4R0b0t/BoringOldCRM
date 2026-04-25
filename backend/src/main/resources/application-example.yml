@@ -1,0 +1,34 @@
+spring:
+  ai:
+    # Anthropic (required — used as the primary/fallback provider)
+    anthropic:
+      api-key: "sk-ant-..."          # Get at https://console.anthropic.com
+    # OpenAI (optional)
+    openai:
+      api-key: "sk-..."              # Get at https://platform.openai.com
+      project-id: "proj_..."         # Optional project scoping
+    # Google Gemini (optional)
+    google:
+      genai:
+        api-key: "AIza..."           # Get at https://aistudio.google.com
+    # Ollama — self-hosted, no API key needed
+    # Requires a running Ollama server: https://ollama.com
+    ollama:
+      base-url: "http://localhost:11434"  # Or your remote Ollama host
+
+app:
+  mail:
+    support-address: "support@example.com"  # Email address to receive tier change requests
+  external-auth:
+    enabled: false
+    provider: oidc
+    issuer-uri: "https://your-tenant.auth0.com/"
+    jwk-set-uri: "https://your-tenant.auth0.com/.well-known/jwks.json"
+    client-id: "your-client-id"
+    client-secret: "your-client-secret"
+    audience: "your-api-audience-or-client-id"
+    require-email-verified: true
+    organizations-claim: organizations
+    organization-ids-claim: org_ids
+    organization-id-claim: org_id
+    email-claim: email

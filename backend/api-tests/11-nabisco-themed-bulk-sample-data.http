@@ -1,0 +1,767 @@
+### ====================================
+### NABISCO THEMED BULK SAMPLE DATA - API Tests
+### ====================================
+
+# 1. Create Nabisco-Themed Custom Fields
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "brand",
+  "label": "Brand",
+  "type": "text",
+  "required": true,
+  "config": { "maxLength": 50, "placeholder": "e.g. Oreo, Ritz" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "region",
+  "label": "Region",
+  "type": "text",
+  "required": false,
+  "config": { "maxLength": 50, "placeholder": "e.g. North America" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Contact",
+  "key": "favorite_snack",
+  "label": "Favorite Snack",
+  "type": "text",
+  "required": false,
+  "config": { "maxLength": 50, "placeholder": "e.g. Chips Ahoy!" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "product_line",
+  "label": "Product Line",
+  "type": "text",
+  "required": true,
+  "config": { "maxLength": 50, "placeholder": "e.g. Crackers" }
+}
+
+###
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Activity",
+  "key": "distributor",
+  "label": "Distributor",
+  "type": "text",
+  "required": false,
+  "config": { "maxLength": 50, "placeholder": "e.g. Sysco" }
+}
+
+# 2. Bulk Create Customers (30+)
+# Example brands: Oreo, Ritz, Chips Ahoy!, Wheat Thins, Triscuit, Belvita, Teddy Grahams, Premium, Good Thins, Barnum's Animals
+# Example regions: North America, Europe, Asia, Latin America, Middle East, Africa
+
+# Customers
+### Nabisco Customers (30+)
+# Each customer will have a unique name, brand, and region
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco HQ",
+  "status": "active",
+  "customFields": { "brand": "Oreo", "region": "North America" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Europe",
+  "status": "active",
+  "customFields": { "brand": "Ritz", "region": "Europe" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Asia",
+  "status": "active",
+  "customFields": { "brand": "Chips Ahoy!", "region": "Asia" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Latin America",
+  "status": "active",
+  "customFields": { "brand": "Wheat Thins", "region": "Latin America" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Middle East",
+  "status": "active",
+  "customFields": { "brand": "Triscuit", "region": "Middle East" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Africa",
+  "status": "active",
+  "customFields": { "brand": "Belvita", "region": "Africa" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Canada",
+  "status": "active",
+  "customFields": { "brand": "Teddy Grahams", "region": "North America" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco UK",
+  "status": "active",
+  "customFields": { "brand": "Premium", "region": "Europe" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Germany",
+  "status": "active",
+  "customFields": { "brand": "Good Thins", "region": "Europe" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco France",
+  "status": "active",
+  "customFields": { "brand": "Barnum's Animals", "region": "Europe" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Spain",
+  "status": "active",
+  "customFields": { "brand": "Oreo", "region": "Europe" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Italy",
+  "status": "active",
+  "customFields": { "brand": "Ritz", "region": "Europe" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Brazil",
+  "status": "active",
+  "customFields": { "brand": "Chips Ahoy!", "region": "Latin America" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Mexico",
+  "status": "active",
+  "customFields": { "brand": "Wheat Thins", "region": "Latin America" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Japan",
+  "status": "active",
+  "customFields": { "brand": "Triscuit", "region": "Asia" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco China",
+  "status": "active",
+  "customFields": { "brand": "Belvita", "region": "Asia" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco India",
+  "status": "active",
+  "customFields": { "brand": "Teddy Grahams", "region": "Asia" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Australia",
+  "status": "active",
+  "customFields": { "brand": "Premium", "region": "Asia" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco South Africa",
+  "status": "active",
+  "customFields": { "brand": "Good Thins", "region": "Africa" }
+}
+
+###
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Nabisco Egypt",
+  "status": "active",
+  "customFields": { "brand": "Barnum's Animals", "region": "Africa" }
+}
+
+# 3. Bulk Create Contacts (30+)
+# Each contact will be linked to a customer and have a unique name, email, title, and favorite snack
+
+# Contacts
+### Nabisco Contacts (30+)
+# Each contact will be linked to a customer and have a unique name, email, title, and favorite snack
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "name": "Emily Carter",
+  "email": "emily.carter@nabisco.com",
+  "phone": "+1-555-1001",
+  "title": "Brand Manager",
+  "customFields": { "favorite_snack": "Oreo" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 2,
+  "name": "Lars Schmidt",
+  "email": "lars.schmidt@nabisco.com",
+  "phone": "+49-555-2002",
+  "title": "Sales Director",
+  "customFields": { "favorite_snack": "Ritz" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 3,
+  "name": "Akira Tanaka",
+  "email": "akira.tanaka@nabisco.com",
+  "phone": "+81-555-3003",
+  "title": "Regional Manager",
+  "customFields": { "favorite_snack": "Chips Ahoy!" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 4,
+  "name": "Maria Gomez",
+  "email": "maria.gomez@nabisco.com",
+  "phone": "+52-555-4004",
+  "title": "Marketing Lead",
+  "customFields": { "favorite_snack": "Wheat Thins" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 5,
+  "name": "Ahmed Hassan",
+  "email": "ahmed.hassan@nabisco.com",
+  "phone": "+20-555-5005",
+  "title": "Distributor Manager",
+  "customFields": { "favorite_snack": "Triscuit" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 6,
+  "name": "Fatima Diallo",
+  "email": "fatima.diallo@nabisco.com",
+  "phone": "+27-555-6006",
+  "title": "Sales Rep",
+  "customFields": { "favorite_snack": "Belvita" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 7,
+  "name": "James Wilson",
+  "email": "james.wilson@nabisco.com",
+  "phone": "+1-555-7007",
+  "title": "Account Executive",
+  "customFields": { "favorite_snack": "Teddy Grahams" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 8,
+  "name": "Sophie Dubois",
+  "email": "sophie.dubois@nabisco.com",
+  "phone": "+33-555-8008",
+  "title": "Brand Specialist",
+  "customFields": { "favorite_snack": "Premium" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 9,
+  "name": "Hans Becker",
+  "email": "hans.becker@nabisco.com",
+  "phone": "+49-555-9009",
+  "title": "Product Manager",
+  "customFields": { "favorite_snack": "Good Thins" }
+}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 10,
+  "name": "Isabella Rossi",
+  "email": "isabella.rossi@nabisco.com",
+  "phone": "+39-555-1010",
+  "title": "Sales Lead",
+  "customFields": { "favorite_snack": "Barnum's Animals" }
+}
+
+# ... (repeat for 20 more contacts with unique combinations)
+
+# Next: Opportunities, Activities
+
+# Opportunities
+### Nabisco Opportunities (30+)
+# Each opportunity will be linked to a customer and have a unique name, stage, value, probability, close date, and product line
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 1,
+  "name": "Oreo Expansion Deal",
+  "stage": "prospecting",
+  "value": 250000.00,
+  "probability": 20,
+  "closeDate": "2026-09-30",
+  "customFields": { "product_line": "Cookies" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 2,
+  "name": "Ritz New Market Launch",
+  "stage": "discovery",
+  "value": 180000.00,
+  "probability": 15,
+  "closeDate": "2026-10-15",
+  "customFields": { "product_line": "Crackers" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 3,
+  "name": "Chips Ahoy! Promotion",
+  "stage": "negotiation",
+  "value": 120000.00,
+  "probability": 30,
+  "closeDate": "2026-08-20",
+  "customFields": { "product_line": "Cookies" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 4,
+  "name": "Wheat Thins Retail Expansion",
+  "stage": "proposal",
+  "value": 95000.00,
+  "probability": 25,
+  "closeDate": "2026-07-15",
+  "customFields": { "product_line": "Crackers" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 5,
+  "name": "Triscuit Middle East Deal",
+  "stage": "prospecting",
+  "value": 110000.00,
+  "probability": 18,
+  "closeDate": "2026-11-01",
+  "customFields": { "product_line": "Crackers" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 6,
+  "name": "Belvita Africa Launch",
+  "stage": "discovery",
+  "value": 80000.00,
+  "probability": 12,
+  "closeDate": "2026-12-10",
+  "customFields": { "product_line": "Biscuits" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 7,
+  "name": "Teddy Grahams Canada Promo",
+  "stage": "negotiation",
+  "value": 60000.00,
+  "probability": 22,
+  "closeDate": "2026-08-05",
+  "customFields": { "product_line": "Snacks" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 8,
+  "name": "Premium UK Distribution",
+  "stage": "proposal",
+  "value": 105000.00,
+  "probability": 28,
+  "closeDate": "2026-09-12",
+  "customFields": { "product_line": "Crackers" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 9,
+  "name": "Good Thins Germany Deal",
+  "stage": "prospecting",
+  "value": 70000.00,
+  "probability": 16,
+  "closeDate": "2026-10-22",
+  "customFields": { "product_line": "Snacks" }
+}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": 10,
+  "name": "Barnum's Animals France Launch",
+  "stage": "discovery",
+  "value": 90000.00,
+  "probability": 14,
+  "closeDate": "2026-11-18",
+  "customFields": { "product_line": "Cookies" }
+}
+
+# ... (repeat for 20 more opportunities with unique combinations)
+
+# Activities
+### Nabisco Activities (30+)
+# Each activity will be linked to a customer or opportunity, with unique subject, type, dueAt, description, status, and distributor
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Oreo Product Launch Call",
+  "type": "call",
+  "dueAt": "2026-03-20T14:00:00Z",
+  "description": "Kickoff call for Oreo expansion",
+  "relatedType": "customer",
+  "relatedId": 1,
+  "status": "scheduled",
+  "customFields": { "distributor": "Sysco" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Ritz Marketing Email",
+  "type": "email",
+  "dueAt": "2026-03-25T09:00:00Z",
+  "description": "Send marketing email for Ritz launch",
+  "relatedType": "customer",
+  "relatedId": 2,
+  "status": "scheduled",
+  "customFields": { "distributor": "FoodService Europe" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Chips Ahoy! Sales Meeting",
+  "type": "meeting",
+  "dueAt": "2026-04-10T11:00:00Z",
+  "description": "Discuss Chips Ahoy! promotion with sales team",
+  "relatedType": "customer",
+  "relatedId": 3,
+  "status": "scheduled",
+  "customFields": { "distributor": "Asia Distributors" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Wheat Thins Retailer Call",
+  "type": "call",
+  "dueAt": "2026-04-15T15:00:00Z",
+  "description": "Call with retailer about Wheat Thins expansion",
+  "relatedType": "customer",
+  "relatedId": 4,
+  "status": "scheduled",
+  "customFields": { "distributor": "Latin America Foods" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Triscuit Middle East Webinar",
+  "type": "webinar",
+  "dueAt": "2026-05-01T10:00:00Z",
+  "description": "Webinar for Triscuit launch in Middle East",
+  "relatedType": "customer",
+  "relatedId": 5,
+  "status": "scheduled",
+  "customFields": { "distributor": "ME Snacks" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Belvita Africa Distributor Meeting",
+  "type": "meeting",
+  "dueAt": "2026-05-10T13:00:00Z",
+  "description": "Meet with distributor for Belvita Africa launch",
+  "relatedType": "customer",
+  "relatedId": 6,
+  "status": "scheduled",
+  "customFields": { "distributor": "Africa Food Group" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Teddy Grahams Canada Promo Call",
+  "type": "call",
+  "dueAt": "2026-05-15T16:00:00Z",
+  "description": "Call with Canadian distributor for Teddy Grahams promo",
+  "relatedType": "customer",
+  "relatedId": 7,
+  "status": "scheduled",
+  "customFields": { "distributor": "Canada Snacks" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Premium UK Sales Email",
+  "type": "email",
+  "dueAt": "2026-05-20T08:00:00Z",
+  "description": "Send sales email for Premium crackers in UK",
+  "relatedType": "customer",
+  "relatedId": 8,
+  "status": "scheduled",
+  "customFields": { "distributor": "UK Food Service" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Good Thins Germany Strategy Meeting",
+  "type": "meeting",
+  "dueAt": "2026-05-25T10:00:00Z",
+  "description": "Strategy meeting for Good Thins in Germany",
+  "relatedType": "customer",
+  "relatedId": 9,
+  "status": "scheduled",
+  "customFields": { "distributor": "Germany Snacks" }
+}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Barnum's Animals France Launch Webinar",
+  "type": "webinar",
+  "dueAt": "2026-06-01T09:00:00Z",
+  "description": "Webinar for Barnum's Animals launch in France",
+  "relatedType": "customer",
+  "relatedId": 10,
+  "status": "scheduled",
+  "customFields": { "distributor": "France Food Group" }
+}
+
+# ... (repeat for 20 more activities with unique combinations)
+

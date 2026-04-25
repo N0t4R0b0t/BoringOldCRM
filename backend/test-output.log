@@ -1,0 +1,131 @@
+> Task :compileJava UP-TO-DATE
+> Task :processResources UP-TO-DATE
+> Task :classes UP-TO-DATE
+
+> Task :compileTestJava
+Note: Some input files use or override a deprecated API.
+Note: Recompile with -Xlint:deprecation for details.
+
+> Task :processTestResources
+> Task :testClasses
+
+> Task :test
+
+ActivityControllerTest > updateActivity_ShouldUpdateAndReturnActivity() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:195
+        Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:804
+            Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:804
+                Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:804
+                    Caused by: org.springframework.beans.factory.UnsatisfiedDependencyException at ConstructorResolver.java:804
+                        Caused by: org.springframework.beans.factory.BeanCreationException at ConstructorResolver.java:657
+                            Caused by: org.springframework.beans.BeanInstantiationException at SimpleInstantiationStrategy.java:183
+                                Caused by: java.lang.IllegalArgumentException at Assert.java:254
+
+ActivityControllerTest > deleteActivity_ShouldRemoveActivity() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+ActivityControllerTest > getActivities_ShouldReturnList() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+ActivityControllerTest > createActivity_ShouldReturnCreatedActivity() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+OpenJDK 64-Bit Server VM warning: Sharing is only supported for boot loader classes because bootstrap classpath has been appended
+
+> Task :test
+
+AssistantServiceTest > testGetSubscription_ReturnsCurrentQuotaStatus() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:195
+        Caused by: org.springframework.beans.factory.BeanCreationException at ConstructorResolver.java:657
+            Caused by: org.springframework.beans.BeanInstantiationException at SimpleInstantiationStrategy.java:183
+                Caused by: java.lang.IllegalArgumentException at Assert.java:254
+
+AssistantServiceTest > testSendMessage_ConfirmMode_MockedResponse_Returns200() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+AssistantServiceTest > testSendMessage_RequiresAuth_Returns401() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+AssistantServiceTest > testGetTiers_ReturnsNonEmptyList() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+AssistantServiceTest > testSendMessage_QuotaExceeded_Returns429() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+AuthControllerTest > login_ShouldFail_WhenCredentialsAreInvalid() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+AuthControllerTest > login_ShouldReturnToken_WhenCredentialsAreValid() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+AuthControllerTest > refreshToken_ShouldReturnNewToken_WhenRefreshTokenIsValid() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+ContactControllerTest > getContacts_ShouldReturnList() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+ContactControllerTest > deleteContact_ShouldRemoveContact() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+ContactControllerTest > updateContact_ShouldUpdateAndReturnContact() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+ContactControllerTest > createContact_ShouldReturnCreatedContact() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+CustomerControllerTest > createCustomer_ShouldReturnCreatedCustomer() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+CustomerControllerTest > getCustomers_ShouldReturnList() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+CustomerControllerTest > updateCustomer_ShouldUpdateAndReturnCustomer() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+CustomerControllerTest > deleteCustomer_ShouldRemoveCustomer() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+CustomerControllerTest > getCustomer_ShouldReturnCustomer_WhenExists() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+OpportunityControllerTest > updateOpportunity_ShouldUpdateAndReturnOpportunity() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+OpportunityControllerTest > deleteOpportunity_ShouldRemoveOpportunity() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+OpportunityControllerTest > getOpportunities_ShouldReturnList() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+OpportunityControllerTest > createOpportunity_ShouldReturnCreatedOpportunity() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+TenantAdminControllerTest > getTenant_ShouldReturnTenant() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+TenantAdminControllerTest > createTenant_ShouldReturnCreatedTenant() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+TenantAdminControllerTest > updateTenant_ShouldUpdateName() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+TenantAdminControllerTest > listTenants_ShouldReturnList() FAILED
+    java.lang.IllegalStateException at DefaultCacheAwareContextLoaderDelegate.java:157
+
+29 tests completed, 29 failed
+
+> Task :test FAILED
+
+[Incubating] Problems report is available at: file:///home/rsalvador/IdeaProjects/BoringOldCRM/backend/build/reports/problems/problems-report.html
+
+FAILURE: Build failed with an exception.
+
+* What went wrong:
+Execution failed for task ':test'.
+> There were failing tests. See the report at: file:///home/rsalvador/IdeaProjects/BoringOldCRM/backend/build/reports/tests/test/index.html
+
+* Try:
+> Run with --scan to get full insights from a Build Scan (powered by Develocity).
+
+BUILD FAILED in 8s
+5 actionable tasks: 3 executed, 2 up-to-date

@@ -1,0 +1,50 @@
+# Local development only — these credentials are for local use.
+# Do not use in production. See docker-compose.prod.yml for a production-ready template.
+services:
+  postgres:
+    image: postgres:15
+    container_name: boccrm-postgres
+    environment:
+      POSTGRES_DB: crm
+      POSTGRES_USER: crm
+      POSTGRES_PASSWORD: crm
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: boccrm-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: crm
+      RABBITMQ_DEFAULT_PASS: crm
+  redis:
+    image: redis:7-alpine
+    container_name: boccrm-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    # Optional: if you want to enable a password, set REDIS_PASSWORD in the environment
+    # and uncomment the command below to require a password. For local/dev it's left open by default.
+    # environment:
+    #   - REDIS_PASSWORD=yourpassword
+    # command: ["redis-server", "--requirepass", "${REDIS_PASSWORD}"]
+
+  opa:
+    image: openpolicyagent/opa:latest-static
+    container_name: boccrm-opa
+    ports:
+      - "8181:8181"
+    command:
+      - "run"
+      - "--server"
+      - "--addr=0.0.0.0:8181"
+      - "--log-format=json"
+
+volumes:
+  pgdata:
+  redisdata:

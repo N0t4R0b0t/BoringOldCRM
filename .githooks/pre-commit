@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+if ! command -v gitleaks >/dev/null 2>&1; then
+  echo "pre-commit: gitleaks not installed, skipping secret scan."
+  echo "Install: https://github.com/gitleaks/gitleaks"
+  exit 0
+fi
+
+if gitleaks protect --help >/dev/null 2>&1; then
+  echo "pre-commit: running gitleaks on staged changes..."
+  gitleaks protect --staged --redact
+else
+  echo "pre-commit: gitleaks protect unavailable, running full repo detect..."
+  gitleaks detect --source . --redact --no-git
+fi

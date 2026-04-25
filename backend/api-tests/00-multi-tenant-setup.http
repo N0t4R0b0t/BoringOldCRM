@@ -1,0 +1,480 @@
+### ===============================================
+### MULTI-TENANT SETUP - Create Tenants & Memberships
+### ===============================================
+### This file demonstrates:
+### 1. Creating multiple tenants
+### 2. Adding users to multiple tenants
+### 3. Testing tenant selection on login (when user has multiple tenants)
+### 4. Testing tenant switching
+
+### Prerequisites:
+### - Run auth.http first to get accessToken for system_admin
+### - Ensure demo user exists in database
+
+---
+
+### ========================================
+### 1. LOGIN AS SYSTEM ADMIN (demo user)
+### ========================================
+
+### Login - System Admin
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+    });
+    client.test("Has accessToken", function() {
+        client.assert(response.body.accessToken !== undefined, "Response should have accessToken");
+    });
+    client.global.set("adminAccessToken", response.body.accessToken);
+    client.global.set("adminRefreshToken", response.body.refreshToken);
+    client.global.set("adminTenantId", response.body.currentTenantId);
+    client.log("✓ Logged in as system admin");
+    client.log("  - Access Token: " + response.body.accessToken.substring(0, 20) + "...");
+    client.log("  - Current Tenant ID: " + response.body.currentTenantId);
+%}
+
+---
+
+### ========================================
+### 2. CREATE NEW TENANTS
+### ========================================
+
+### Create Tenant 1 - Acme Corp
+POST {{baseUrl}}/admin/tenants
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Corporation"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has tenant id", function() {
+        client.assert(response.body.id !== undefined, "Response should have id");
+    });
+    client.global.set("tenantId1", response.body.id);
+    client.log("✓ Created Tenant 1 (Acme Corporation): ID " + response.body.id);
+%}
+
+### Create Tenant 2 - TechStart Inc
+POST {{baseUrl}}/admin/tenants
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "TechStart Inc"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.global.set("tenantId2", response.body.id);
+    client.log("✓ Created Tenant 2 (TechStart Inc): ID " + response.body.id);
+%}
+
+### Create Tenant 3 - Global Solutions
+POST {{baseUrl}}/admin/tenants
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Global Solutions"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.global.set("tenantId3", response.body.id);
+    client.log("✓ Created Tenant 3 (Global Solutions): ID " + response.body.id);
+%}
+
+---
+
+### ========================================
+### 3. LIST ALL TENANTS
+### ========================================
+
+### Get All Tenants
+GET {{baseUrl}}/admin/tenants?page=0&size=50
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Is array", function() {
+        client.assert(Array.isArray(response.body), "Response should be array");
+    });
+    client.log("✓ Retrieved all tenants: " + response.body.length + " tenants found");
+    response.body.forEach((t, idx) => {
+        client.log("  [" + (idx + 1) + "] " + t.name + " (ID: " + t.id + ")");
+    });
+%}
+
+---
+
+### ========================================
+### 4. ADD DEMO USER TO MULTIPLE TENANTS
+### ========================================
+
+### Add Demo User to Tenant 1 (Acme Corp) as admin
+POST {{baseUrl}}/admin/tenants/{{tenantId1}}/users
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "role": "admin"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has membership id", function() {
+        client.assert(response.body.id !== undefined, "Response should have id");
+    });
+    client.global.set("membership1Id", response.body.id);
+    client.log("✓ Added demo user to Tenant 1 (Acme Corp) as admin");
+    client.log("  - Membership ID: " + response.body.id);
+    client.log("  - Role: " + response.body.role);
+    client.log("  - Status: " + response.body.status);
+%}
+
+### Add Demo User to Tenant 2 (TechStart Inc) as admin
+POST {{baseUrl}}/admin/tenants/{{tenantId2}}/users
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "role": "admin"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.global.set("membership2Id", response.body.id);
+    client.log("✓ Added demo user to Tenant 2 (TechStart Inc) as admin");
+%}
+
+### Add Demo User to Tenant 3 (Global Solutions) as user (non-admin)
+POST {{baseUrl}}/admin/tenants/{{tenantId3}}/users
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "role": "user"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.global.set("membership3Id", response.body.id);
+    client.log("✓ Added demo user to Tenant 3 (Global Solutions) as user");
+%}
+
+---
+
+### ========================================
+### 5. LIST USERS IN EACH TENANT
+### ========================================
+
+### List Users in Tenant 1
+GET {{baseUrl}}/admin/tenants/{{tenantId1}}/users
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Users in Tenant 1 (Acme Corp):");
+    response.body.forEach(u => {
+        client.log("  - User ID: " + u.userId + ", Role: " + u.role + ", Status: " + u.status);
+    });
+%}
+
+### List Users in Tenant 2
+GET {{baseUrl}}/admin/tenants/{{tenantId2}}/users
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Users in Tenant 2 (TechStart Inc):");
+    response.body.forEach(u => {
+        client.log("  - User ID: " + u.userId + ", Role: " + u.role + ", Status: " + u.status);
+    });
+%}
+
+### List Users in Tenant 3
+GET {{baseUrl}}/admin/tenants/{{tenantId3}}/users
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Users in Tenant 3 (Global Solutions):");
+    response.body.forEach(u => {
+        client.log("  - User ID: " + u.userId + ", Role: " + u.role + ", Status: " + u.status);
+    });
+%}
+
+---
+
+### ========================================
+### 6. GET TENANT DETAILS
+### ========================================
+
+### Get Tenant 1 Details
+GET {{baseUrl}}/admin/tenants/{{tenantId1}}
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Tenant 1 Details:");
+    client.log("  - ID: " + response.body.id);
+    client.log("  - Name: " + response.body.name);
+    client.log("  - Created: " + response.body.createdAt);
+%}
+
+### Get Tenant 2 Details
+GET {{baseUrl}}/admin/tenants/{{tenantId2}}
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Tenant 2 Details:");
+    client.log("  - ID: " + response.body.id);
+    client.log("  - Name: " + response.body.name);
+%}
+
+---
+
+### ========================================
+### 7. TEST TENANT SELECTION LOGIN FLOW
+### ========================================
+### NOTE: Run this after setting up multi-tenant memberships
+### When a user with multiple tenant memberships logs in without an OIDC org claim,
+### the response will have requiresTenantSelection: true with availableTenants list
+
+### Login Demo User (Multiple Tenants) - This should return tenant selection
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+
+    if (response.body.requiresTenantSelection) {
+        client.log("✓ TENANT SELECTION REQUIRED");
+        client.log("  - Available tenants: " + response.body.availableTenants.length);
+        response.body.availableTenants.forEach((t, idx) => {
+            client.log("  [" + (idx + 1) + "] " + t.name + " (ID: " + t.id + ", Role: " + t.role + ")");
+        });
+        // Store the selection token for switching
+        client.global.set("selectionAccessToken", response.body.accessToken);
+        client.log("✓ Stored selection token for tenant switching");
+    } else {
+        client.log("⚠ Tenant selection NOT required (user has only one tenant)");
+    }
+%}
+
+---
+
+### ========================================
+### 8. SWITCH TO DIFFERENT TENANT
+### ========================================
+### After login returns requiresTenantSelection: true,
+### use the selection token to call switchTenant
+
+### Switch to Tenant 1
+POST {{baseUrl}}/auth/switch-tenant
+Authorization: Bearer {{selectionAccessToken}}
+Content-Type: application/json
+
+{
+  "tenantId": {{tenantId1}}
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has new accessToken", function() {
+        client.assert(response.body.accessToken !== undefined, "Should have new accessToken");
+    });
+    client.global.set("tenant1AccessToken", response.body.accessToken);
+    client.log("✓ Switched to Tenant 1 (Acme Corp)");
+    client.log("  - Current Tenant ID: " + response.body.currentTenantId);
+    client.log("  - Current Role: " + response.body.currentRole);
+    client.log("  - New Access Token: " + response.body.accessToken.substring(0, 20) + "...");
+%}
+
+### Switch to Tenant 2
+POST {{baseUrl}}/auth/switch-tenant
+Authorization: Bearer {{selectionAccessToken}}
+Content-Type: application/json
+
+{
+  "tenantId": {{tenantId2}}
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.global.set("tenant2AccessToken", response.body.accessToken);
+    client.log("✓ Switched to Tenant 2 (TechStart Inc)");
+    client.log("  - Current Tenant ID: " + response.body.currentTenantId);
+    client.log("  - Current Role: " + response.body.currentRole);
+%}
+
+### Switch to Tenant 3
+POST {{baseUrl}}/auth/switch-tenant
+Authorization: Bearer {{selectionAccessToken}}
+Content-Type: application/json
+
+{
+  "tenantId": {{tenantId3}}
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.global.set("tenant3AccessToken", response.body.accessToken);
+    client.log("✓ Switched to Tenant 3 (Global Solutions)");
+    client.log("  - Current Tenant ID: " + response.body.currentTenantId);
+    client.log("  - Current Role: " + response.body.currentRole);
+    client.log("  - NOTE: Role is 'user' in this tenant (not admin)");
+%}
+
+---
+
+### ========================================
+### 9. VERIFY TENANT-SCOPED DATA
+### ========================================
+### Each token should only access data in that tenant
+
+### Get Current Tenant Info (using Tenant 1 token)
+GET {{baseUrl}}/admin/tenants/current
+Authorization: Bearer {{tenant1AccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Current tenant info (via Tenant 1 token):");
+    client.log("  - ID: " + response.body.id);
+    client.log("  - Name: " + response.body.name);
+%}
+
+### Get Current Tenant Info (using Tenant 2 token)
+GET {{baseUrl}}/admin/tenants/current
+Authorization: Bearer {{tenant2AccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Current tenant info (via Tenant 2 token):");
+    client.log("  - ID: " + response.body.id);
+    client.log("  - Name: " + response.body.name);
+%}
+
+### Get Current Tenant Info (using Tenant 3 token)
+GET {{baseUrl}}/admin/tenants/current
+Authorization: Bearer {{tenant3AccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Current tenant info (via Tenant 3 token):");
+    client.log("  - ID: " + response.body.id);
+    client.log("  - Name: " + response.body.name);
+%}
+
+---
+
+### ========================================
+### 10. REMOVE USER FROM TENANT
+### ========================================
+
+### Remove Demo User from Tenant 3
+DELETE {{baseUrl}}/admin/tenants/{{tenantId3}}/users/1
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 204", function() {
+        client.assert(response.status === 204, "Expected 204");
+    });
+    client.log("✓ Removed demo user from Tenant 3");
+%}
+
+### Verify Removal - List Users in Tenant 3
+GET {{baseUrl}}/admin/tenants/{{tenantId3}}/users
+Authorization: Bearer {{adminAccessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Users in Tenant 3 after removal:");
+    if (response.body.length === 0) {
+        client.log("  - (empty)");
+    } else {
+        response.body.forEach(u => {
+            client.log("  - User ID: " + u.userId);
+        });
+    }
+%}
+
+---
+
+### ========================================
+### SUMMARY
+### ========================================
+### ✓ Created 3 new tenants
+### ✓ Added demo user to multiple tenants with different roles
+### ✓ Demonstrated login with tenant selection (requiresTenantSelection: true)
+### ✓ Demonstrated tenant switching with role inheritance
+### ✓ Verified tenant-scoped access control
+###
+### NEXT STEPS:
+### 1. Log in to the frontend at http://localhost:5173/login
+### 2. Use demo@bocrm.com / demo123
+### 3. You should see the tenant selection page
+### 4. Select a tenant to proceed to dashboard
+### 5. In the sidebar, you should see a tenant switcher dropdown
+###    (visible when user has multiple tenants)
+### ========================================

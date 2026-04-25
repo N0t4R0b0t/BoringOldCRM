@@ -1,0 +1,158 @@
+### Integration Framework API Tests
+### Test file for integration management endpoints
+### Requires: auth.http to be run first (sets @token and @tenantId variables)
+
+@baseUrl = http://localhost:8080/api
+@contentType = application/json
+
+### 1. Get all integrations (empty initially)
+GET {{baseUrl}}/integrations
+Authorization: Bearer {{token}}
+
+### 2. Create Slack integration
+POST {{baseUrl}}/integrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "adapterType": "slack",
+  "name": "Sales Channel",
+  "enabled": true,
+  "credentials": {
+    "webhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+  },
+  "eventTypes": "CUSTOMER_CREATED,OPPORTUNITY_UPDATED"
+}
+
+### 3. Create webhook integration with HMAC secret
+POST {{baseUrl}}/integrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "adapterType": "webhook",
+  "name": "Production Webhook",
+  "enabled": true,
+  "credentials": {
+    "url": "https://webhook.example.com/crm-events",
+    "secret": "your-hmac-secret-key"
+  },
+  "eventTypes": "CUSTOMER_CREATED,CUSTOMER_UPDATED,CONTACT_CREATED"
+}
+
+### 4. Create HubSpot integration
+POST {{baseUrl}}/integrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "adapterType": "hubspot",
+  "name": "HubSpot Production",
+  "enabled": true,
+  "credentials": {
+    "apiKey": "pat-na1-your-hubspot-api-key"
+  },
+  "eventTypes": "CUSTOMER_CREATED,CUSTOMER_UPDATED,CONTACT_CREATED"
+}
+
+### 5. Create Zapier integration (subscribe to ALL events)
+POST {{baseUrl}}/integrations
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "adapterType": "zapier",
+  "name": "Zapier Workflows",
+  "enabled": true,
+  "credentials": {
+    "webhookUrl": "https://hooks.zapier.com/hooks/catch/YOUR/ID"
+  },
+  "eventTypes": ""
+}
+
+### 6. List all integrations
+GET {{baseUrl}}/integrations
+Authorization: Bearer {{token}}
+
+### 7. Get specific integration (ID from response above)
+### Replace {id} with actual integration ID
+GET {{baseUrl}}/integrations/1
+Authorization: Bearer {{token}}
+
+### 8. Update integration (enable/disable, change events)
+### Replace {id} with actual integration ID
+PUT {{baseUrl}}/integrations/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "adapterType": "slack",
+  "name": "Sales Channel - Updated",
+  "enabled": false,
+  "credentials": {
+    "webhookUrl": "https://hooks.slack.com/services/YOUR/WEBHOOK/URL"
+  },
+  "eventTypes": "CUSTOMER_CREATED,CUSTOMER_UPDATED"
+}
+
+### 9. Test webhook manually with curl
+### curl -X POST https://webhook.example.com/crm-events \
+###   -H "Content-Type: application/json" \
+###   -H "X-Signature: sha256=<hmac>" \
+###   -d '{"eventType":"CRM_EVENT","entityType":"Customer",...}'
+
+### 10. Delete integration
+### Replace {id} with actual integration ID
+DELETE {{baseUrl}}/integrations/1
+Authorization: Bearer {{token}}
+
+### ─── Integration Event Testing ─────────────────────────────────────
+
+### Create a customer to trigger CUSTOMER_CREATED event
+POST {{baseUrl}}/customers
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Integration Test Corp",
+  "status": "active",
+  "customFields": {}
+}
+
+### Update the customer to trigger CUSTOMER_UPDATED event
+### Replace {customerId} with ID from response above
+PUT {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Integration Test Corp - Updated",
+  "status": "qualified"
+}
+
+### Delete the customer to trigger CUSTOMER_DELETED event
+### Replace {customerId} with ID from above
+DELETE {{baseUrl}}/customers/1
+Authorization: Bearer {{token}}
+
+### ─── Webhook Testing (using webhook.site) ─────────────────────────
+
+### 1. Visit https://webhook.site and copy your unique URL
+### 2. Create webhook integration with that URL
+### 3. Create/update/delete a customer in BOCRM
+### 4. Check webhook.site to see the POST request from IntegrationPoller
+### 5. Verify payload structure matches expected format
+
+### ─── Debugging: Check OutboxEvent Status ──────────────────────────
+
+### Query to see pending events (requires direct DB access)
+### SELECT * FROM outbox_events
+### WHERE event_type = 'CRM_EVENT' AND published_at IS NULL
+### ORDER BY created_at DESC LIMIT 10;
+
+### High retry count indicates delivery failure
+### SELECT id, adapter_type, retry_count, created_at
+### FROM outbox_events
+### WHERE published_at IS NULL AND retry_count > 3
+### ORDER BY retry_count DESC;
+

@@ -1,0 +1,10 @@
+title = "BoringOldCRM gitleaks config"
+
+[allowlist]
+  description = "Allowlist for documentation examples and test fixtures"
+  paths = [
+    # Documentation files with placeholder curl examples and sample keys
+    '''MCP_SERVER_SETUP\.md''',
+    '''MCP_API_KEY_UPDATE\.md''',
+    '''mcp/README\.md''',
+  ]

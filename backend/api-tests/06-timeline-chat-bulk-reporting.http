@@ -1,0 +1,343 @@
+### ====================================
+### TIMELINE, CHAT, BULK OPS, REPORTING - API Tests
+### ====================================
+
+### TIMELINE TESTS ###
+
+### 1. Get Customer Timeline
+GET {{baseUrl}}/timeline/Customer/{{customerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Timeline is array", function() {
+        client.assert(Array.isArray(response.body), "Timeline should be array");
+    });
+    client.log("✓ Retrieved customer timeline: " + response.body.length + " events");
+%}
+
+### 2. Get Opportunity Timeline
+GET {{baseUrl}}/timeline/Opportunity/{{opportunityId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Retrieved opportunity timeline: " + response.body.length + " events");
+%}
+
+### CHAT TESTS ###
+
+### 3. Get Customer Chat History
+GET {{baseUrl}}/chat/Customer/{{customerId}}
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Retrieved chat history: " + response.body.length + " messages");
+%}
+
+### 4. Send Chat Message
+POST {{baseUrl}}/chat/Customer/{{customerId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "message": "Following up on our meeting today",
+  "internal": false
+}
+
+> {%
+    client.test("Message sent", function() {
+        client.assert(response.status === 201, "Expected 201");
+    });
+    client.log("✓ Sent chat message");
+%}
+
+### 5. Send Internal Note
+POST {{baseUrl}}/chat/Customer/{{customerId}}
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "message": "Internal note: Customer seems very interested in enterprise plan",
+  "internal": true
+}
+
+> {%
+    client.log("✓ Sent internal note");
+%}
+
+### BULK OPERATIONS TESTS ###
+
+### 6. Bulk Update - Customer Status
+POST {{baseUrl}}/bulk/customers/update
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "ids": [{{customerId}}],
+  "updates": {
+    "status": "active"
+  }
+}
+
+> {%
+    client.test("Bulk update successful", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Bulk updated customers");
+%}
+
+### 7. Bulk Update - Opportunity Stage
+POST {{baseUrl}}/bulk/opportunities/update
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "ids": [{{opportunityId}}, {{opportunityId2}}],
+  "updates": {
+    "stage": "proposal"
+  }
+}
+
+> {%
+    client.log("✓ Bulk updated opportunities");
+%}
+
+### 8. Bulk Delete - Activities (if supported)
+POST {{baseUrl}}/bulk/activities/delete
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "ids": [{{activityId}}]
+}
+
+> {%
+    client.test("Bulk delete executed", function() {
+        client.assert(response.status === 200 || response.status === 204, "Expected successful response");
+    });
+    client.log("✓ Bulk deleted activities: status " + response.status);
+%}
+
+### REPORTING TESTS ###
+
+### 9. Get Sales Report - Overview
+GET {{baseUrl}}/reports/sales/overview
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Report generated", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.test("Has metrics", function() {
+        client.assert(response.body.totalRevenue !== undefined || response.body.metrics !== undefined, "Should have metrics");
+    });
+    client.log("✓ Sales overview report generated");
+%}
+
+### 10. Get Sales Report - By Stage
+GET {{baseUrl}}/reports/sales/by-stage
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Sales by stage report");
+%}
+
+### 11. Get Sales Report - Pipeline
+GET {{baseUrl}}/reports/sales/pipeline
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Sales pipeline report");
+%}
+
+### 12. Get Sales Report - Conversion Rate
+GET {{baseUrl}}/reports/sales/conversion
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Conversion rate report");
+%}
+
+### 13. Get Activity Report - By Type
+GET {{baseUrl}}/reports/activities/by-type
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Activity by type report");
+%}
+
+### 14. Get Activity Report - By Status
+GET {{baseUrl}}/reports/activities/by-status
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Activity by status report");
+%}
+
+### 15. Get Customer Report - By Status
+GET {{baseUrl}}/reports/customers/by-status
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Customer by status report");
+%}
+
+### 16. Get Custom Date Range Report
+GET {{baseUrl}}/reports/sales/overview?startDate=2026-01-01&endDate=2026-12-31
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Custom date range report");
+%}
+
+### 17. Export Report - CSV Format (if supported)
+GET {{baseUrl}}/reports/sales/overview?format=csv
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.test("Export successful", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Exported report as CSV: status " + response.status);
+%}
+
+### 18. Export Report - Excel Format (if supported)
+GET {{baseUrl}}/reports/opportunities/list?format=xlsx
+Authorization: Bearer {{accessToken}}
+
+> {%
+    client.log("✓ Export attempted: status " + response.status);
+%}
+
+### ADVANCED FILTERING TESTS ###
+
+### 19. Advanced Filter - Multiple Conditions
+POST {{baseUrl}}/customers/search
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "filters": [
+    {
+      "field": "status",
+      "operator": "equals",
+      "value": "active"
+    },
+    {
+      "field": "customFields.employee_count",
+      "operator": "greaterThan",
+      "value": 100
+    }
+  ],
+  "sort": {
+    "field": "name",
+    "direction": "asc"
+  },
+  "page": 0,
+  "size": 20
+}
+
+> {%
+    client.test("Advanced search executed", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.log("✓ Advanced filter applied: " + (response.body.content ? response.body.content.length : 0) + " results");
+%}
+
+### 20. Saved Filter - Create
+POST {{baseUrl}}/filters
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "High Value Active Customers",
+  "entityType": "Customer",
+  "filters": [
+    {
+      "field": "status",
+      "operator": "equals",
+      "value": "active"
+    }
+  ]
+}
+
+> {%
+    if (response.status === 201) {
+        client.global.set("savedFilterId", response.body.id);
+        client.log("✓ Saved filter created: ID " + response.body.id);
+    } else {
+        client.log("✓ Save filter endpoint: status " + response.status);
+    }
+%}
+
+### 21. Integration Test - Full Workflow
+### Create Customer -> Create Contact -> Create Opportunity -> Create Activity -> Get Timeline
+
+POST {{baseUrl}}/customers
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "name": "Integration Test Corp",
+  "status": "active"
+}
+
+> {%
+    client.global.set("integrationCustomerId", response.body.id);
+    client.log("✓ [1/4] Created customer: " + response.body.id);
+%}
+
+###
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{integrationCustomerId}},
+  "name": "Test Contact",
+  "email": "test@integration.com"
+}
+
+> {%
+    client.log("✓ [2/4] Created contact");
+%}
+
+###
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{integrationCustomerId}},
+  "name": "Integration Test Deal",
+  "stage": "prospecting",
+  "value": 50000
+}
+
+> {%
+    client.global.set("integrationOppId", response.body.id);
+    client.log("✓ [3/4] Created opportunity");
+%}
+
+###
+POST {{baseUrl}}/activities
+Authorization: Bearer {{accessToken}}
+Content-Type: application/json
+
+{
+  "subject": "Integration Test Activity",
+  "type": "call",
+  "relatedType": "customer",
+  "relatedId": {{integrationCustomerId}},
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ [4/4] Created activity");
+    client.log("✓ Integration workflow complete!");
+%}

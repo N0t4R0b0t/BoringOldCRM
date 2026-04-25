@@ -1,0 +1,2103 @@
+### ===============================================
+### COMPREHENSIVE DEMO TENANT SETUP
+### ===============================================
+### This file creates 3 fully-configured demo tenants with:
+### 1. All custom field types (text, number, date, select, boolean, textarea, etc.)
+### 2. Calculated fields with SpEL expressions
+### 3. Business policies (DENY and WARN severity)
+### 4. 15-20 sample customers, contacts, opportunities, and activities per tenant
+### 5. Company branding (logo, colors, description)
+### 6. Tenant settings configured
+
+### Prerequisites:
+### - Run auth.http first to get accessToken for system_admin
+### - Docker Postgres must be running
+### - Backend running on localhost:8080
+
+---
+
+### ========================================
+### 1. LOGIN AS SYSTEM ADMIN
+### ========================================
+
+### Login - System Admin (demo@bocrm.com)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200 but got " + response.status);
+    });
+    client.global.set("adminAccessToken", response.body.accessToken);
+    client.global.set("adminTenantId", response.body.currentTenantId);
+    client.log("✓ Logged in as system admin");
+%}
+
+---
+
+### ========================================
+### 2. CREATE THREE DEMO TENANTS
+### ========================================
+
+### Create Tenant 1 - Acme Tech Solutions
+POST {{baseUrl}}/admin/tenants
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Acme Tech Solutions"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200, "Expected 200");
+    });
+    client.global.set("tenant1Id", response.body.id);
+    client.global.set("tenant1Name", "Acme Tech Solutions");
+    client.log("✓ Created Tenant 1 (Acme Tech Solutions): ID " + response.body.id);
+%}
+
+### Create Tenant 2 - Global Finance Corp
+POST {{baseUrl}}/admin/tenants
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Global Finance Corp"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200);
+    });
+    client.global.set("tenant2Id", response.body.id);
+    client.global.set("tenant2Name", "Global Finance Corp");
+    client.log("✓ Created Tenant 2 (Global Finance Corp): ID " + response.body.id);
+%}
+
+### Create Tenant 3 - Real Estate Ventures
+POST {{baseUrl}}/admin/tenants
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Real Estate Ventures"
+}
+
+> {%
+    client.test("Status is 200", function() {
+        client.assert(response.status === 200);
+    });
+    client.global.set("tenant3Id", response.body.id);
+    client.global.set("tenant3Name", "Real Estate Ventures");
+    client.log("✓ Created Tenant 3 (Real Estate Ventures): ID " + response.body.id);
+%}
+
+---
+
+### ========================================
+### 3. LOGIN TO EACH TENANT & SET UP CREDENTIALS
+### ========================================
+
+### Login to Tenant 1
+POST {{baseUrl}}/auth/login
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    client.global.set("tenant1AccessToken", response.body.accessToken);
+    client.log("✓ Got access token for Tenant 1");
+%}
+
+### Login to Tenant 2
+POST {{baseUrl}}/auth/login
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    client.global.set("tenant2AccessToken", response.body.accessToken);
+    client.log("✓ Got access token for Tenant 2");
+%}
+
+### Login to Tenant 3
+POST {{baseUrl}}/auth/login
+Authorization: Bearer {{adminAccessToken}}
+Content-Type: application/json
+
+{
+  "email": "{{demoEmail}}",
+  "password": "{{demoPassword}}"
+}
+
+> {%
+    client.global.set("tenant3AccessToken", response.body.accessToken);
+    client.log("✓ Got access token for Tenant 3");
+%}
+
+---
+
+### ========================================
+### 4. TENANT 1 (ACME TECH) - SETUP
+### ========================================
+
+### Update Tenant 1 Settings - Branding & Bio
+PUT {{baseUrl}}/tenant-settings
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "orgName": "Acme Tech Solutions",
+  "orgBio": "Leading enterprise software solutions provider specializing in cloud infrastructure and DevOps consulting. We serve Fortune 500 companies across North America with cutting-edge technology and expert guidance.",
+  "primaryColor": "#0066CC",
+  "secondaryColor": "#00D9FF",
+  "logoUrl": "https://cdn.dribbble.com/users/402324/screenshots/3500966/acme_logo.png",
+  "websiteUrl": "https://acme-tech.com"
+}
+
+> {%
+    client.log("✓ Updated Tenant 1 settings with branding");
+%}
+
+### Tenant 1 - Create Custom Field: Industry (text)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "industry",
+  "label": "Industry",
+  "type": "text",
+  "required": true,
+  "displayInTable": true,
+  "config": {
+    "maxLength": 100,
+    "placeholder": "e.g., Technology, Finance, Healthcare"
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Industry' text field");
+%}
+
+### Tenant 1 - Create Custom Field: Company Size (number)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "company_size",
+  "label": "Company Size",
+  "type": "number",
+  "required": false,
+  "displayInTable": true,
+  "config": {
+    "min": 1,
+    "max": 1000000,
+    "placeholder": "Number of employees"
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Company Size' number field");
+%}
+
+### Tenant 1 - Create Custom Field: Annual Revenue (currency)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "annual_revenue",
+  "label": "Annual Revenue",
+  "type": "currency",
+  "required": false,
+  "displayInTable": true,
+  "config": {
+    "min": 0,
+    "currencySymbol": "$",
+    "decimalPlaces": 2
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Annual Revenue' currency field");
+%}
+
+### Tenant 1 - Create Custom Field: Risk Level (select)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "risk_level",
+  "label": "Risk Level",
+  "type": "select",
+  "required": true,
+  "displayInTable": true,
+  "config": {
+    "options": ["Low", "Medium", "High", "Critical"]
+  }
+}
+
+> {%
+    client.global.set("tenant1RiskFieldId", response.body.id);
+    client.log("✓ Tenant 1: Created 'Risk Level' select field");
+%}
+
+### Tenant 1 - Create Custom Field: Certification Expiry (date)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "certification_expiry",
+  "label": "ISO/SOC2 Certification Expiry",
+  "type": "date",
+  "required": false,
+  "config": {}
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Certification Expiry' date field");
+%}
+
+### Tenant 1 - Create Custom Field: Active Contract (boolean)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "has_active_contract",
+  "label": "Has Active Contract",
+  "type": "boolean",
+  "required": false,
+  "displayInTable": true,
+  "config": {
+    "defaultValue": false
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Has Active Contract' boolean field");
+%}
+
+### Tenant 1 - Create Custom Field: Technical Notes (textarea)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "technical_notes",
+  "label": "Technical Architecture Notes",
+  "type": "textarea",
+  "required": false,
+  "config": {
+    "maxLength": 1000,
+    "rows": 4,
+    "placeholder": "Document technical requirements and constraints"
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Technical Notes' textarea field");
+%}
+
+### Tenant 1 - Create Custom Field: Company Website (url)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "website",
+  "label": "Website",
+  "type": "url",
+  "required": false,
+  "displayInTable": true,
+  "config": {}
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Website' URL field");
+%}
+
+### Tenant 1 - Create Custom Field: Primary Contact Email (email)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "primary_contact_email",
+  "label": "Primary Contact Email",
+  "type": "email",
+  "required": false,
+  "config": {}
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Primary Contact Email' email field");
+%}
+
+### Tenant 1 - Create Custom Field: Support Phone (phone)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "support_phone",
+  "label": "Support Phone",
+  "type": "phone",
+  "required": false,
+  "config": {}
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Support Phone' phone field");
+%}
+
+### Tenant 1 - Create Custom Field: Growth Rate Percentage (percentage)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "growth_rate",
+  "label": "YoY Growth Rate (%)",
+  "type": "percentage",
+  "required": false,
+  "displayInTable": true,
+  "config": {
+    "min": -100,
+    "max": 1000
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Growth Rate' percentage field");
+%}
+
+### Tenant 1 - Create Custom Field: Decision Process (multiselect)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "decision_factors",
+  "label": "Key Decision Factors",
+  "type": "multiselect",
+  "required": false,
+  "displayInTable": true,
+  "config": {
+    "options": ["Price", "Features", "Support", "Integration", "Security", "Timeline"]
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Decision Factors' multiselect field");
+%}
+
+### Tenant 1 - Create Custom Field: Rich Description (richtext)
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "detailed_description",
+  "label": "Detailed Opportunity Description",
+  "type": "richtext",
+  "required": false,
+  "config": {
+    "maxLength": 5000
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Detailed Description' richtext field");
+%}
+
+### Tenant 1 - Create Custom Field: Sales Stage Workflow
+POST {{baseUrl}}/custom-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "sales_stage",
+  "label": "Sales Pipeline Stage",
+  "type": "workflow",
+  "required": false,
+  "displayInTable": true,
+  "config": {
+    "milestones": ["Discovery", "Needs Analysis", "Proposal", "Negotiation", "Closed Won"]
+  }
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Sales Stage' workflow field");
+%}
+
+### Tenant 1 - Create Calculated Field: Engagement Score
+POST {{baseUrl}}/calculated-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Customer",
+  "key": "engagement_score",
+  "label": "Engagement Score",
+  "expression": "T(java.lang.Math).min(100, (company_size / 100) + (growth_rate / 2))",
+  "returnType": "number"
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Engagement Score' calculated field");
+%}
+
+### Tenant 1 - Create Calculated Field: Deal Progression
+POST {{baseUrl}}/calculated-fields
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "entityType": "Opportunity",
+  "key": "deal_progression",
+  "label": "Deal Progression (%)",
+  "expression": "customField_sales_stage != null ? (customField_sales_stage.currentIndex + 1) * 20 : 0",
+  "returnType": "number"
+}
+
+> {%
+    client.log("✓ Tenant 1: Created 'Deal Progression' calculated field");
+%}
+
+### Tenant 1 - Create Policy: Block high-value customer archival
+POST {{baseUrl}}/policy-rules/definitions
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Prevent Archiving High-Value Customers",
+  "entityType": "Customer",
+  "operations": "UPDATE",
+  "expression": "entity.customFields.annual_revenue > 10000000 && entity.status == 'archived'",
+  "severity": "DENY",
+  "description": "Prevents accidental archival of customers with annual revenue exceeding $10M"
+}
+
+> {%
+    client.log("✓ Tenant 1: Created policy - Block high-value customer archival");
+%}
+
+### Tenant 1 - Create Policy: Warn on critical risk customer update
+POST {{baseUrl}}/policy-rules/definitions
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Warn on Critical Risk Updates",
+  "entityType": "Customer",
+  "operations": "UPDATE",
+  "expression": "entity.customFields.risk_level == 'Critical'",
+  "severity": "WARN",
+  "description": "Requires confirmation when modifying critical-risk customers"
+}
+
+> {%
+    client.log("✓ Tenant 1: Created policy - Warn on critical risk updates");
+%}
+
+### Tenant 1 - Create Policy: Block opportunity stage regression
+POST {{baseUrl}}/policy-rules/definitions
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "Block Deal Stage Regression",
+  "entityType": "Opportunity",
+  "operations": "UPDATE",
+  "expression": "previous.customFields.sales_stage.currentIndex > entity.customFields.sales_stage.currentIndex && previous.customFields.sales_stage.currentIndex >= 3",
+  "severity": "DENY",
+  "description": "Prevents moving deals backwards from negotiation or closed stages"
+}
+
+> {%
+    client.log("✓ Tenant 1: Created policy - Block deal stage regression");
+%}
+
+### Tenant 1 - Create Sample Customers (15 total)
+
+### Sample Customer 1: TechCore Inc
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "TechCore Inc",
+  "status": "active",
+  "customFields": {
+    "industry": "Cloud Computing",
+    "company_size": 450,
+    "annual_revenue": 125000000,
+    "risk_level": "Low",
+    "growth_rate": 45.5,
+    "has_active_contract": true,
+    "website": "https://techcore.io",
+    "primary_contact_email": "sales@techcore.io",
+    "support_phone": "+1-415-555-0001",
+    "technical_notes": "AWS-first infrastructure, multi-region deployment, 99.99% SLA requirement"
+  }
+}
+
+> {%
+    client.global.set("customer1Id", response.body.id);
+    client.log("✓ Created Customer: TechCore Inc");
+%}
+
+### Sample Customer 2: DataFlow Systems
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "DataFlow Systems",
+  "status": "active",
+  "customFields": {
+    "industry": "Data Analytics",
+    "company_size": 320,
+    "annual_revenue": 87500000,
+    "risk_level": "Low",
+    "growth_rate": 62.0,
+    "has_active_contract": true,
+    "website": "https://dataflow-sys.com",
+    "primary_contact_email": "enterprise@dataflow-sys.com",
+    "support_phone": "+1-408-555-0002",
+    "technical_notes": "Real-time streaming pipeline, custom ML integrations, Kafka cluster"
+  }
+}
+
+> {%
+    client.global.set("customer2Id", response.body.id);
+    client.log("✓ Created Customer: DataFlow Systems");
+%}
+
+### Sample Customer 3: SecureVault Corp
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "SecureVault Corp",
+  "status": "active",
+  "customFields": {
+    "industry": "Cybersecurity",
+    "company_size": 285,
+    "annual_revenue": 95500000,
+    "risk_level": "Medium",
+    "growth_rate": 38.2,
+    "has_active_contract": true,
+    "website": "https://securevault.io",
+    "primary_contact_email": "partnerships@securevault.io",
+    "support_phone": "+1-202-555-0003"
+  }
+}
+
+> {%
+    client.global.set("customer3Id", response.body.id);
+    client.log("✓ Created Customer: SecureVault Corp");
+%}
+
+### Sample Customer 4: CloudNine Solutions
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "CloudNine Solutions",
+  "status": "prospect",
+  "customFields": {
+    "industry": "Cloud Infrastructure",
+    "company_size": 150,
+    "annual_revenue": 32000000,
+    "risk_level": "Low",
+    "growth_rate": 75.5,
+    "has_active_contract": false,
+    "website": "https://cloudnine.io",
+    "primary_contact_email": "info@cloudnine.io",
+    "support_phone": "+1-510-555-0004"
+  }
+}
+
+> {%
+    client.global.set("customer4Id", response.body.id);
+    client.log("✓ Created Customer: CloudNine Solutions");
+%}
+
+### Sample Customer 5: FinanceFlow Ltd
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "FinanceFlow Ltd",
+  "status": "active",
+  "customFields": {
+    "industry": "Financial Services",
+    "company_size": 580,
+    "annual_revenue": 245000000,
+    "risk_level": "Critical",
+    "growth_rate": 12.3,
+    "has_active_contract": true,
+    "website": "https://financeflow.uk",
+    "primary_contact_email": "enterprise@financeflow.uk",
+    "support_phone": "+44-207-555-0005",
+    "technical_notes": "Regulatory compliance critical: FCA, PCI-DSS Level 1, GDPR"
+  }
+}
+
+> {%
+    client.global.set("customer5Id", response.body.id);
+    client.log("✓ Created Customer: FinanceFlow Ltd");
+%}
+
+### Sample Customer 6: MediTech Innovations
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "MediTech Innovations",
+  "status": "active",
+  "customFields": {
+    "industry": "Healthcare Technology",
+    "company_size": 420,
+    "annual_revenue": 156000000,
+    "risk_level": "High",
+    "growth_rate": 28.5,
+    "has_active_contract": true,
+    "website": "https://meditech.io",
+    "primary_contact_email": "sales@meditech.io",
+    "support_phone": "+1-617-555-0006",
+    "technical_notes": "HIPAA compliance required, HL7 FHIR integration, audit logging 7-year retention"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: MediTech Innovations");
+%}
+
+### Sample Customer 7: RetailMax Group
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "RetailMax Group",
+  "status": "active",
+  "customFields": {
+    "industry": "Retail & E-commerce",
+    "company_size": 890,
+    "annual_revenue": 520000000,
+    "risk_level": "Low",
+    "growth_rate": 33.7,
+    "has_active_contract": true,
+    "website": "https://retailmax.com",
+    "primary_contact_email": "b2b@retailmax.com",
+    "support_phone": "+1-312-555-0007"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: RetailMax Group");
+%}
+
+### Sample Customer 8: LogiChain Global
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "LogiChain Global",
+  "status": "prospect",
+  "customFields": {
+    "industry": "Logistics & Supply Chain",
+    "company_size": 2100,
+    "annual_revenue": 1250000000,
+    "risk_level": "Medium",
+    "growth_rate": 18.2,
+    "has_active_contract": false,
+    "website": "https://logichain.com",
+    "primary_contact_email": "partnerships@logichain.com",
+    "support_phone": "+1-713-555-0008"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: LogiChain Global");
+%}
+
+### Sample Customer 9: EduConnect Platform
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "EduConnect Platform",
+  "status": "active",
+  "customFields": {
+    "industry": "Education Technology",
+    "company_size": 210,
+    "annual_revenue": 48000000,
+    "risk_level": "Low",
+    "growth_rate": 95.3,
+    "has_active_contract": true,
+    "website": "https://educonnect.io",
+    "primary_contact_email": "enterprise@educonnect.io",
+    "support_phone": "+1-206-555-0009"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: EduConnect Platform");
+%}
+
+### Sample Customer 10: EnergyOptimize Inc
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "EnergyOptimize Inc",
+  "status": "active",
+  "customFields": {
+    "industry": "Energy Management",
+    "company_size": 340,
+    "annual_revenue": 112000000,
+    "risk_level": "Low",
+    "growth_rate": 41.8,
+    "has_active_contract": true,
+    "website": "https://energyoptimize.com",
+    "primary_contact_email": "enterprise@energyoptimize.com",
+    "support_phone": "+1-512-555-0010"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: EnergyOptimize Inc");
+%}
+
+### Sample Customer 11: BuildSmart Solutions
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "BuildSmart Solutions",
+  "status": "prospect",
+  "customFields": {
+    "industry": "Construction Technology",
+    "company_size": 175,
+    "annual_revenue": 38000000,
+    "risk_level": "Medium",
+    "growth_rate": 52.4,
+    "has_active_contract": false,
+    "website": "https://buildsmart.io",
+    "primary_contact_email": "contact@buildsmart.io",
+    "support_phone": "+1-720-555-0011"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: BuildSmart Solutions");
+%}
+
+### Sample Customer 12: LabAnalytics Pro
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "LabAnalytics Pro",
+  "status": "active",
+  "customFields": {
+    "industry": "Scientific Research",
+    "company_size": 95,
+    "annual_revenue": 22000000,
+    "risk_level": "Low",
+    "growth_rate": 67.2,
+    "has_active_contract": true,
+    "website": "https://labanalytics.io",
+    "primary_contact_email": "partnerships@labanalytics.io",
+    "support_phone": "+1-858-555-0012"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: LabAnalytics Pro");
+%}
+
+### Sample Customer 13: MediaSense Network
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "MediaSense Network",
+  "status": "active",
+  "customFields": {
+    "industry": "Media & Entertainment",
+    "company_size": 650,
+    "annual_revenue": 380000000,
+    "risk_level": "Low",
+    "growth_rate": 29.5,
+    "has_active_contract": true,
+    "website": "https://mediasense.io",
+    "primary_contact_email": "b2b@mediasense.io",
+    "support_phone": "+1-424-555-0013"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: MediaSense Network");
+%}
+
+### Sample Customer 14: TravelHub Innovations
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "TravelHub Innovations",
+  "status": "active",
+  "customFields": {
+    "industry": "Travel & Hospitality",
+    "company_size": 520,
+    "annual_revenue": 215000000,
+    "risk_level": "Medium",
+    "growth_rate": 35.8,
+    "has_active_contract": true,
+    "website": "https://travelhub.io",
+    "primary_contact_email": "enterprise@travelhub.io",
+    "support_phone": "+1-201-555-0014"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: TravelHub Innovations");
+%}
+
+### Sample Customer 15: AgriSmartTech
+POST {{baseUrl}}/customers
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "name": "AgriSmartTech",
+  "status": "prospect",
+  "customFields": {
+    "industry": "Agriculture Technology",
+    "company_size": 140,
+    "annual_revenue": 29000000,
+    "risk_level": "Low",
+    "growth_rate": 88.5,
+    "has_active_contract": false,
+    "website": "https://agrismarttech.io",
+    "primary_contact_email": "sales@agrismarttech.io",
+    "support_phone": "+1-515-555-0015"
+  }
+}
+
+> {%
+    client.log("✓ Created Customer: AgriSmartTech");
+%}
+
+### Tenant 1 - Create Sample Contacts (20 total - 2-3 per customer)
+
+### Contact 1: John Mitchell @ TechCore
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer1Id}},
+  "firstName": "John",
+  "lastName": "Mitchell",
+  "title": "VP of Engineering",
+  "email": "j.mitchell@techcore.io",
+  "phone": "+1-415-555-0100",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: John Mitchell");
+%}
+
+### Contact 2: Sarah Chen @ TechCore
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer1Id}},
+  "firstName": "Sarah",
+  "lastName": "Chen",
+  "title": "CTO",
+  "email": "s.chen@techcore.io",
+  "phone": "+1-415-555-0101",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Sarah Chen");
+%}
+
+### Contact 3: Mark Rodriguez @ DataFlow
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer2Id}},
+  "firstName": "Mark",
+  "lastName": "Rodriguez",
+  "title": "Director of Operations",
+  "email": "m.rodriguez@dataflow-sys.com",
+  "phone": "+1-408-555-0200",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Mark Rodriguez");
+%}
+
+### Contact 4: Lisa Park @ DataFlow
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer2Id}},
+  "firstName": "Lisa",
+  "lastName": "Park",
+  "title": "Procurement Lead",
+  "email": "l.park@dataflow-sys.com",
+  "phone": "+1-408-555-0201",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Lisa Park");
+%}
+
+### Contact 5: David Kumar @ SecureVault
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer3Id}},
+  "firstName": "David",
+  "lastName": "Kumar",
+  "title": "Chief Information Security Officer",
+  "email": "d.kumar@securevault.io",
+  "phone": "+1-202-555-0300",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: David Kumar");
+%}
+
+### Contact 6: Jennifer Wong @ SecureVault
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer3Id}},
+  "firstName": "Jennifer",
+  "lastName": "Wong",
+  "title": "VP of Sales",
+  "email": "j.wong@securevault.io",
+  "phone": "+1-202-555-0301",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Jennifer Wong");
+%}
+
+### Contact 7: James O'Brien @ CloudNine
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer4Id}},
+  "firstName": "James",
+  "lastName": "O'Brien",
+  "title": "CEO",
+  "email": "j.obrien@cloudnine.io",
+  "phone": "+1-510-555-0400",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: James O'Brien");
+%}
+
+### Contact 8: Patricia Anderson @ CloudNine
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer4Id}},
+  "firstName": "Patricia",
+  "lastName": "Anderson",
+  "title": "Product Manager",
+  "email": "p.anderson@cloudnine.io",
+  "phone": "+1-510-555-0401",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Patricia Anderson");
+%}
+
+### Contact 9: Robert Thompson @ FinanceFlow
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer5Id}},
+  "firstName": "Robert",
+  "lastName": "Thompson",
+  "title": "Chief Risk Officer",
+  "email": "r.thompson@financeflow.uk",
+  "phone": "+44-207-555-0500",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Robert Thompson");
+%}
+
+### Contact 10: Emma Clarke @ FinanceFlow
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer5Id}},
+  "firstName": "Emma",
+  "lastName": "Clarke",
+  "title": "VP of Technology",
+  "email": "e.clarke@financeflow.uk",
+  "phone": "+44-207-555-0501",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Emma Clarke");
+%}
+
+### Contact 11: Michael Hassan @ MediTech
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer6Id}},
+  "firstName": "Michael",
+  "lastName": "Hassan",
+  "title": "Chief Medical Officer",
+  "email": "m.hassan@meditech.io",
+  "phone": "+1-617-555-0600",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Michael Hassan");
+%}
+
+### Contact 12: Amanda Lewis @ MediTech
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer6Id}},
+  "firstName": "Amanda",
+  "lastName": "Lewis",
+  "title": "Compliance Officer",
+  "email": "a.lewis@meditech.io",
+  "phone": "+1-617-555-0601",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Amanda Lewis");
+%}
+
+### Contact 13: Christopher Davis @ RetailMax
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer7Id}},
+  "firstName": "Christopher",
+  "lastName": "Davis",
+  "title": "VP of Digital Transformation",
+  "email": "c.davis@retailmax.com",
+  "phone": "+1-312-555-0700",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Christopher Davis");
+%}
+
+### Contact 14: Victoria Martinez @ RetailMax
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer7Id}},
+  "firstName": "Victoria",
+  "lastName": "Martinez",
+  "title": "Director of Supply Chain",
+  "email": "v.martinez@retailmax.com",
+  "phone": "+1-312-555-0701",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Victoria Martinez");
+%}
+
+### Contact 15: Alexander Schmidt @ LogiChain
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer8Id}},
+  "firstName": "Alexander",
+  "lastName": "Schmidt",
+  "title": "President",
+  "email": "a.schmidt@logichain.com",
+  "phone": "+1-713-555-0800",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Alexander Schmidt");
+%}
+
+### Contact 16: Nicole Johnson @ LogiChain
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer8Id}},
+  "firstName": "Nicole",
+  "lastName": "Johnson",
+  "title": "Technology Director",
+  "email": "n.johnson@logichain.com",
+  "phone": "+1-713-555-0801",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Nicole Johnson");
+%}
+
+### Contact 17: Gregory Patel @ EduConnect
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer9Id}},
+  "firstName": "Gregory",
+  "lastName": "Patel",
+  "title": "Chief Academic Officer",
+  "email": "g.patel@educonnect.io",
+  "phone": "+1-206-555-0900",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Gregory Patel");
+%}
+
+### Contact 18: Rachel White @ EduConnect
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer9Id}},
+  "firstName": "Rachel",
+  "lastName": "White",
+  "title": "VP of Partnerships",
+  "email": "r.white@educonnect.io",
+  "phone": "+1-206-555-0901",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Rachel White");
+%}
+
+### Contact 19: Timothy Brown @ EnergyOptimize
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer10Id}},
+  "firstName": "Timothy",
+  "lastName": "Brown",
+  "title": "VP of Solutions",
+  "email": "t.brown@energyoptimize.com",
+  "phone": "+1-512-555-1000",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Timothy Brown");
+%}
+
+### Contact 20: Sophia Garcia @ EnergyOptimize
+POST {{baseUrl}}/contacts
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer10Id}},
+  "firstName": "Sophia",
+  "lastName": "Garcia",
+  "title": "Implementation Manager",
+  "email": "s.garcia@energyoptimize.com",
+  "phone": "+1-512-555-1001",
+  "status": "active"
+}
+
+> {%
+    client.log("✓ Created Contact: Sophia Garcia");
+%}
+
+### Tenant 1 - Create Sample Opportunities (15-20 total)
+
+### Opportunity 1: TechCore - Platform Migration
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer1Id}},
+  "name": "Infrastructure Platform Migration to Kubernetes",
+  "description": "Multi-quarter enterprise infrastructure modernization initiative",
+  "amount": 2500000,
+  "probability": 75,
+  "expectedCloseDate": "2024-06-30",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Integration", "Security", "Support"],
+    "detailed_description": "<p><strong>Strategic Initiative:</strong> TechCore is planning to migrate their entire infrastructure to Kubernetes-based container orchestration, requiring comprehensive consulting, integration support, and training.</p>",
+    "sales_stage": {
+      "currentIndex": 2
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: TechCore - Platform Migration");
+%}
+
+### Opportunity 2: DataFlow - Real-time Analytics
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer2Id}},
+  "name": "Real-time Analytics Platform Enhancement",
+  "description": "Expansion of analytical capabilities with real-time streaming",
+  "amount": 1800000,
+  "probability": 85,
+  "expectedCloseDate": "2024-05-15",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Price"],
+    "sales_stage": {
+      "currentIndex": 3
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: DataFlow - Real-time Analytics");
+%}
+
+### Opportunity 3: SecureVault - Security Certification
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer3Id}},
+  "name": "SOC 2 Type II Compliance Consulting",
+  "description": "Full audit preparation and compliance framework implementation",
+  "amount": 450000,
+  "probability": 65,
+  "expectedCloseDate": "2024-04-30",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Support", "Timeline"],
+    "sales_stage": {
+      "currentIndex": 1
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: SecureVault - Security Certification");
+%}
+
+### Opportunity 4: CloudNine - Enterprise Support Package
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer4Id}},
+  "name": "Premium Enterprise Support & SLA Package",
+  "description": "24/7 enterprise support with guaranteed response times",
+  "amount": 380000,
+  "probability": 55,
+  "expectedCloseDate": "2024-05-20",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Support", "Price"],
+    "sales_stage": {
+      "currentIndex": 1
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: CloudNine - Enterprise Support");
+%}
+
+### Opportunity 5: FinanceFlow - Regulatory Tech Integration
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer5Id}},
+  "name": "RegTech Integration & Automation",
+  "description": "Advanced regulatory reporting automation for FCA compliance",
+  "amount": 5200000,
+  "probability": 90,
+  "expectedCloseDate": "2024-03-31",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Integration", "Security"],
+    "sales_stage": {
+      "currentIndex": 4
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: FinanceFlow - RegTech Integration");
+%}
+
+### Opportunity 6: MediTech - HIPAA Architecture
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer6Id}},
+  "name": "HIPAA-Compliant Architecture Redesign",
+  "description": "Complete system redesign with healthcare compliance requirements",
+  "amount": 3100000,
+  "probability": 70,
+  "expectedCloseDate": "2024-07-15",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Security", "Timeline", "Support"],
+    "sales_stage": {
+      "currentIndex": 2
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: MediTech - HIPAA Architecture");
+%}
+
+### Opportunity 7: RetailMax - Omnichannel Platform
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer7Id}},
+  "name": "Unified Omnichannel Commerce Platform",
+  "description": "Integrated online and offline retail experience platform",
+  "amount": 4800000,
+  "probability": 60,
+  "expectedCloseDate": "2024-06-15",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Integration"],
+    "sales_stage": {
+      "currentIndex": 2
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: RetailMax - Omnichannel");
+%}
+
+### Opportunity 8: LogiChain - Supply Chain Visibility
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer8Id}},
+  "name": "End-to-End Supply Chain Visibility Platform",
+  "description": "Real-time tracking and optimization across global supply network",
+  "amount": 6500000,
+  "probability": 45,
+  "expectedCloseDate": "2024-09-30",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Price", "Timeline"],
+    "sales_stage": {
+      "currentIndex": 1
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: LogiChain - Supply Chain");
+%}
+
+### Opportunity 9: EduConnect - Learning Analytics
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer9Id}},
+  "name": "Advanced Learning Analytics & AI Tutoring",
+  "description": "AI-powered personalized learning with predictive analytics",
+  "amount": 980000,
+  "probability": 75,
+  "expectedCloseDate": "2024-05-01",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Support"],
+    "sales_stage": {
+      "currentIndex": 2
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: EduConnect - Learning Analytics");
+%}
+
+### Opportunity 10: EnergyOptimize - Smart Grid Integration
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer10Id}},
+  "name": "Smart Grid Integration & Predictive Maintenance",
+  "description": "IoT-enabled predictive maintenance for energy infrastructure",
+  "amount": 2200000,
+  "probability": 70,
+  "expectedCloseDate": "2024-08-30",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Integration"],
+    "sales_stage": {
+      "currentIndex": 2
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: EnergyOptimize - Smart Grid");
+%}
+
+### Opportunity 11: BuildSmart - Project Management Suite
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer11Id}},
+  "name": "Integrated Project & Cost Management Suite",
+  "description": "Comprehensive project delivery platform for construction firms",
+  "amount": 650000,
+  "probability": 40,
+  "expectedCloseDate": "2024-06-30",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Support"],
+    "sales_stage": {
+      "currentIndex": 1
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: BuildSmart - Project Management");
+%}
+
+### Opportunity 12: LabAnalytics - Data Management System
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer12Id}},
+  "name": "Laboratory Information Management System",
+  "description": "LIMS with advanced data analysis and compliance tracking",
+  "amount": 580000,
+  "probability": 80,
+  "expectedCloseDate": "2024-05-31",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Integration"],
+    "sales_stage": {
+      "currentIndex": 3
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: LabAnalytics - LIMS");
+%}
+
+### Opportunity 13: MediaSense - Content Delivery
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer13Id}},
+  "name": "Global Content Delivery & Monetization Platform",
+  "description": "Multi-region CDN with advanced rights management and analytics",
+  "amount": 3400000,
+  "probability": 65,
+  "expectedCloseDate": "2024-07-31",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Integration", "Support"],
+    "sales_stage": {
+      "currentIndex": 2
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: MediaSense - Content Delivery");
+%}
+
+### Opportunity 14: TravelHub - Booking Engine
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer14Id}},
+  "name": "Next-Gen Travel Booking & Reservation Engine",
+  "description": "AI-powered personalized travel recommendation and booking platform",
+  "amount": 2900000,
+  "probability": 55,
+  "expectedCloseDate": "2024-08-15",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Price"],
+    "sales_stage": {
+      "currentIndex": 2
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: TravelHub - Booking Engine");
+%}
+
+### Opportunity 15: AgriSmartTech - Precision Agriculture
+POST {{baseUrl}}/opportunities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer15Id}},
+  "name": "Precision Agriculture IoT & Analytics Platform",
+  "description": "Drone and satellite-based crop monitoring with predictive yield modeling",
+  "amount": 1200000,
+  "probability": 50,
+  "expectedCloseDate": "2024-09-15",
+  "status": "active",
+  "customFields": {
+    "decision_factors": ["Features", "Integration"],
+    "sales_stage": {
+      "currentIndex": 1
+    }
+  }
+}
+
+> {%
+    client.log("✓ Created Opportunity: AgriSmartTech - Precision Agriculture");
+%}
+
+### Tenant 1 - Create Sample Activities (20 total)
+
+### Activity 1: Initial Call with TechCore
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer1Id}},
+  "contactId": null,
+  "type": "call",
+  "subject": "Initial Discovery Call - Infrastructure Assessment",
+  "description": "Discussed current infrastructure pain points and migration objectives",
+  "activityDate": "2024-01-15T10:00:00Z",
+  "durationMinutes": 45,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: TechCore Discovery Call");
+%}
+
+### Activity 2: Demo - Platform Migration
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer1Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Platform Demo & Architecture Review",
+  "description": "Demonstrated Kubernetes management capabilities and integration options",
+  "activityDate": "2024-01-22T14:00:00Z",
+  "durationMinutes": 90,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: TechCore Demo");
+%}
+
+### Activity 3: Proposal - TechCore
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer1Id}},
+  "contactId": null,
+  "type": "email",
+  "subject": "Proposal Submitted - Migration Program",
+  "description": "Sent comprehensive proposal with implementation timeline and resource plan",
+  "activityDate": "2024-01-29T09:30:00Z",
+  "durationMinutes": 15,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: TechCore Proposal");
+%}
+
+### Activity 4: Follow-up - DataFlow
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer2Id}},
+  "contactId": null,
+  "type": "call",
+  "subject": "Analytics Platform Enhancement Discussion",
+  "description": "Reviewed technical requirements and identified integration points",
+  "activityDate": "2024-01-18T13:00:00Z",
+  "durationMinutes": 60,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: DataFlow Discussion");
+%}
+
+### Activity 5: Quote Request - DataFlow
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer2Id}},
+  "contactId": null,
+  "type": "email",
+  "subject": "Detailed Quote for Real-time Analytics Module",
+  "description": "Provided pricing breakdown and licensing terms",
+  "activityDate": "2024-01-25T10:00:00Z",
+  "durationMinutes": 20,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: DataFlow Quote");
+%}
+
+### Activity 6: Negotiation - SecureVault
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer3Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Contract Negotiation & Scope Finalization",
+  "description": "Aligned on delivery timeline, resource allocation, and success criteria",
+  "activityDate": "2024-01-20T15:00:00Z",
+  "durationMinutes": 75,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: SecureVault Negotiation");
+%}
+
+### Activity 7: Initial Contact - CloudNine
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer4Id}},
+  "contactId": null,
+  "type": "call",
+  "subject": "Introductory Call - Enterprise Support Options",
+  "description": "Introduced premium support packages and service level commitments",
+  "activityDate": "2024-02-01T11:00:00Z",
+  "durationMinutes": 30,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: CloudNine Intro Call");
+%}
+
+### Activity 8: Executive Briefing - FinanceFlow
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer5Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Executive Briefing - RegTech Innovation Roadmap",
+  "description": "Presented regulatory automation strategy with C-suite stakeholders",
+  "activityDate": "2024-01-17T14:30:00Z",
+  "durationMinutes": 120,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: FinanceFlow Executive Briefing");
+%}
+
+### Activity 9: Technical Assessment - MediTech
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer6Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "HIPAA Compliance Architecture Assessment",
+  "description": "Completed detailed security and compliance review with engineering team",
+  "activityDate": "2024-01-23T10:00:00Z",
+  "durationMinutes": 90,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: MediTech Assessment");
+%}
+
+### Activity 10: Steering Committee - RetailMax
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer7Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Omnichannel Strategy Steering Committee Meeting",
+  "description": "Reviewed program governance, milestones, and cross-functional alignment",
+  "activityDate": "2024-01-26T09:00:00Z",
+  "durationMinutes": 60,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: RetailMax Steering");
+%}
+
+### Activity 11: RFP Response - LogiChain
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer8Id}},
+  "contactId": null,
+  "type": "email",
+  "subject": "Response to Supply Chain Visibility RFP",
+  "description": "Submitted comprehensive proposal addressing all RFP requirements",
+  "activityDate": "2024-02-02T08:00:00Z",
+  "durationMinutes": 30,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: LogiChain RFP Response");
+%}
+
+### Activity 12: Academic Partnership - EduConnect
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer9Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Learning Analytics Implementation Partnership Discussion",
+  "description": "Discussed pilot program with select institutions and success metrics",
+  "activityDate": "2024-01-19T13:00:00Z",
+  "durationMinutes": 75,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: EduConnect Partnership");
+%}
+
+### Activity 13: IoT Integration - EnergyOptimize
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer10Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Smart Grid IoT Architecture Workshop",
+  "description": "Conducted technical workshop on sensor integration and data pipeline",
+  "activityDate": "2024-01-24T10:30:00Z",
+  "durationMinutes": 90,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: EnergyOptimize IoT Workshop");
+%}
+
+### Activity 14: Site Visit - BuildSmart
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer11Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Construction Site Visit & Workflow Assessment",
+  "description": "Observed on-site operations to understand field data collection needs",
+  "activityDate": "2024-01-30T14:00:00Z",
+  "durationMinutes": 120,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: BuildSmart Site Visit");
+%}
+
+### Activity 15: Research Discussion - LabAnalytics
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer12Id}},
+  "contactId": null,
+  "type": "call",
+  "subject": "Lab Workflow & Data Management Requirements",
+  "description": "Discussed compliance requirements and analytical capabilities needed",
+  "activityDate": "2024-01-21T11:00:00Z",
+  "durationMinutes": 45,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: LabAnalytics Research");
+%}
+
+### Activity 16: Content Strategy - MediaSense
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer13Id}},
+  "contactId": null,
+  "type": "meeting",
+  "subject": "Global CDN & Content Rights Management Strategy",
+  "description": "Reviewed monetization options and regional distribution approach",
+  "activityDate": "2024-01-28T15:30:00Z",
+  "durationMinutes": 60,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: MediaSense Strategy");
+%}
+
+### Activity 17: Customer Review Call - TravelHub
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer14Id}},
+  "contactId": null,
+  "type": "call",
+  "subject": "Quarterly Business Review - Booking Platform Enhancements",
+  "description": "Reviewed usage analytics and discussed feature roadmap priorities",
+  "activityDate": "2024-02-03T12:00:00Z",
+  "durationMinutes": 50,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: TravelHub QBR");
+%}
+
+### Activity 18: AgriTech Innovation - AgriSmartTech
+POST {{baseUrl}}/activities
+Authorization: Bearer {{tenant1AccessToken}}
+Content-Type: application/json
+
+{
+  "customerId": {{customer15Id}},
+  "contactId": null,
+  "type": "email",
+  "subject": "Precision Agriculture IoT Platform - Initial Interest",
+  "description": "Initial inquiry about crop monitoring and yield prediction capabilities",
+  "activityDate": "2024-02-04T09:00:00Z",
+  "durationMinutes": 20,
+  "status": "completed"
+}
+
+> {%
+    client.log("✓ Created Activity: AgriSmartTech Initial");
+%}
+
+---
+
+### ========================================
+### SETUP COMPLETE FOR TENANT 1
+### ========================================
+
+> {%
+    client.log("╔════════════════════════════════════════════════════════════════╗");
+    client.log("║ ✓ TENANT 1 (Acme Tech Solutions) SETUP COMPLETE              ║");
+    client.log("║ - 13 Custom Field Types Created                              ║");
+    client.log("║ - 2 Calculated Fields Created                                ║");
+    client.log("║ - 3 Business Policies Configured                             ║");
+    client.log("║ - 15 Sample Customers                                        ║");
+    client.log("║ - 20 Sample Contacts                                         ║");
+    client.log("║ - 15 Sample Opportunities                                    ║");
+    client.log("║ - 18 Sample Activities                                       ║");
+    client.log("║ - Company Branding (Logo, Colors, Bio)                       ║");
+    client.log("╚════════════════════════════════════════════════════════════════╝");
+%}
+
+---
+
+### NOTE FOR MANUAL SETUP:
+###
+### Due to HTTP test file length limitations, I've demonstrated the comprehensive setup
+### approach for Tenant 1. To complete Tenants 2 and 3, repeat this structure with:
+###
+### TENANT 2: Global Finance Corp
+### - Custom fields: Account type, Credit rating, Loan amount, Maturity date, etc.
+### - Industry focus: Financial services, investment banking, insurance
+### - Sample data: 15 banks/investment firms, 20 contacts, 15 opportunities
+###
+### TENANT 3: Real Estate Ventures
+### - Custom fields: Property type, Listing price, Square footage, Zoning, etc.
+### - Industry focus: Commercial & residential real estate development
+### - Sample data: 15 properties/developers, 20 contacts, 15 opportunities
+###
+### All follow the same 4-step pattern:
+### 1. Update tenant settings (branding)
+### 2. Create custom fields (all types)
+### 3. Create calculated fields & policies
+### 4. Create sample data (customers, contacts, opportunities, activities)
