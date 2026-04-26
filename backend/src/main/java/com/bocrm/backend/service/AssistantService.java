@@ -476,12 +476,14 @@ public class AssistantService {
                         str(args, "email"), str(args, "phone"), str(args, "title"), str(args, "customFieldsJson"));
                 case "createContact" -> crmTools.createContact(str(args, "name"), longVal(args, "customerId"),
                         str(args, "email"), str(args, "phone"), str(args, "title"), str(args, "customFieldsJson"));
+                case "listOpportunityTypes" -> crmTools.listOpportunityTypes();
+                case "createOpportunityType" -> isAdmin ? crmTools.createOpportunityType(str(args, "name"), str(args, "description")) : "Permission denied: admin role required";
                 case "createOpportunity" -> crmTools.createOpportunity(str(args, "name"), longVal(args, "customerId"),
-                        str(args, "stage"), str(args, "value"), str(args, "closeDate"), str(args, "customFieldsJson"));
+                        str(args, "stage"), str(args, "value"), str(args, "closeDate"), str(args, "opportunityTypeSlug"), str(args, "customFieldsJson"));
                 case "updateOpportunity" -> crmTools.updateOpportunity(longVal(args, "opportunityId"),
-                        str(args, "name"), str(args, "stage"), str(args, "value"), str(args, "customFieldsJson"));
-                case "advancedOpportunitySearch" -> crmTools.advancedOpportunitySearch(str(args, "query"), str(args, "stage"), longVal(args, "customerId"), str(args, "sortBy"), str(args, "sortOrder"));
-                case "analyzeOpportunities" -> crmTools.analyzeOpportunities(str(args, "analysis"), str(args, "stage"), longVal(args, "customerId"), str(args, "query"));
+                        str(args, "name"), str(args, "stage"), str(args, "value"), str(args, "opportunityTypeSlug"), str(args, "customFieldsJson"));
+                case "advancedOpportunitySearch" -> crmTools.advancedOpportunitySearch(str(args, "query"), str(args, "stage"), longVal(args, "customerId"), str(args, "typeSlug"), str(args, "sortBy"), str(args, "sortOrder"));
+                case "analyzeOpportunities" -> crmTools.analyzeOpportunities(str(args, "analysis"), str(args, "stage"), longVal(args, "customerId"), str(args, "typeSlug"), str(args, "query"));
                 case "createActivity" -> crmTools.createActivity(str(args, "subject"), str(args, "type"),
                         str(args, "relatedType"), longVal(args, "relatedId"), str(args, "description"),
                         str(args, "dueAt"), str(args, "status"), str(args, "customFieldsJson"));
@@ -849,8 +851,15 @@ public class AssistantService {
         sb.append("  - Analyze types: total_count, by_status, recent, status_breakdown\n");
         sb.append("CONTACTS: advancedContactSearch(query, customerId, sortBy, sortOrder) | analyzeContacts(analysis, customerId, status, query)\n");
         sb.append("  - Analyze types: total_count, by_status, by_customer, recent, status_breakdown\n");
-        sb.append("OPPORTUNITIES: advancedOpportunitySearch(query, stage, customerId, sortBy, sortOrder) | analyzeOpportunities(analysis, stage, customerId, query)\n");
-        sb.append("  - Analyze types: highest_value, lowest_value, total_value, average_value, by_stage, closing_soon\n");
+        sb.append("OPPORTUNITIES: listOpportunityTypes() | advancedOpportunitySearch(query, stage, customerId, typeSlug, sortBy, sortOrder) | analyzeOpportunities(analysis, stage, customerId, typeSlug, query)\n");
+        sb.append("  - Analyze types: highest_value, lowest_value, total_value, average_value, by_stage, by_type, closing_soon\n");
+        sb.append("  - Opportunity types: call listOpportunityTypes() to get available slugs before creating/filtering by type.\n");
+        sb.append("  - To create an opportunity with a type: listOpportunityTypes() → createOpportunity(..., opportunityTypeSlug=<slug>, ...)\n");
+        sb.append("  - To reassign an opportunity to a different type: listOpportunityTypes() → updateOpportunity(opportunityId, ..., opportunityTypeSlug=<slug>)\n");
+        sb.append("  - To filter search by type: advancedOpportunitySearch(..., typeSlug=<slug>)\n");
+        if (isAdmin) {
+            sb.append("  - To create a new opportunity type (admin): createOpportunityType(name, description)\n");
+        }
         sb.append("ACTIVITIES: advancedActivitySearch(query, type, status, sortBy, sortOrder) | analyzeActivities(analysis, type, status, query)\n");
         sb.append("  - Analyze types: total_count, by_type, by_status, overdue, upcoming, type_breakdown\n");
         sb.append("CUSTOM RECORDS: advancedCustomRecordSearch(query, status, sortBy, sortOrder) | analyzeCustomRecords(analysis, status, query)\n");
@@ -987,6 +996,8 @@ public class AssistantService {
             case "bulkCreateCustomRecords" -> "Bulk create customRecords";
             case "updateCustomer" -> "Update customer id=" + params.getOrDefault("customerId", "?");
             case "createContact" -> "Create contact: " + params.getOrDefault("name", "?");
+            case "listOpportunityTypes" -> "List opportunity types";
+            case "createOpportunityType" -> "Create opportunity type: " + params.getOrDefault("name", "?");
             case "createOpportunity" -> "Create opportunity: " + params.getOrDefault("name", "?");
             case "updateOpportunity" -> "Update opportunity id=" + params.getOrDefault("opportunityId", "?");
             case "updateContact" -> "Update contact id=" + params.getOrDefault("contactId", "?");

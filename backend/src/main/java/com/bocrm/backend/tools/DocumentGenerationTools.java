@@ -56,6 +56,7 @@ import java.util.HashSet;
 public class DocumentGenerationTools {
 
     private final OpportunityService opportunityService;
+    private final OpportunityTypeService opportunityTypeService;
     private final CustomerService customerService;
     private final ActivityService activityService;
     private final ContactService contactService;
@@ -75,6 +76,7 @@ public class DocumentGenerationTools {
     private static final java.time.Duration DOWNLOAD_URL_TTL = java.time.Duration.ofHours(24);
 
     public DocumentGenerationTools(OpportunityService opportunityService,
+                                    OpportunityTypeService opportunityTypeService,
                                     CustomerService customerService,
                                     ActivityService activityService,
                                     ContactService contactService,
@@ -87,6 +89,7 @@ public class DocumentGenerationTools {
                                     DocumentDownloadTokenService downloadTokenService,
                                     ObjectMapper objectMapper) {
         this.opportunityService = opportunityService;
+        this.opportunityTypeService = opportunityTypeService;
         this.customerService = customerService;
         this.activityService = activityService;
         this.contactService = contactService;
@@ -445,10 +448,34 @@ public class DocumentGenerationTools {
                 }
                 case "Opportunity" -> {
                     List<OpportunityDTO> opps = opportunityService.listOpportunities(0, 200, "name", "asc", "", null, java.util.Collections.emptyList(), null, java.util.Collections.emptyMap()).getContent();
+                    Map<String, String> typeSlugToName = opportunityTypeService.getAll().stream()
+                            .collect(java.util.stream.Collectors.toMap(OpportunityTypeDTO::getSlug, OpportunityTypeDTO::getName));
                     md.append("## Opportunities (").append(opps.size()).append(")\n\n");
-                    md.append("| ID | Name | Stage | Value |\n|---|---|---|---|\n");
+                    md.append("| ID | Name | Type | Stage | Value |\n|---|---|---|---|---|\n");
                     for (OpportunityDTO o : opps) {
-                        md.append("| ").append(o.getId()).append(" | ").append(o.getName()).append(" | ").append(o.getStage()).append(" | ").append(o.getValue() != null ? "$" + o.getValue() : "-").append(" |\n");
+                        String typeName = o.getOpportunityTypeSlug() != null
+                                ? typeSlugToName.getOrDefault(o.getOpportunityTypeSlug(), o.getOpportunityTypeSlug()) : "-";
+                        md.append("| ").append(o.getId()).append(" | ").append(o.getName())
+                          .append(" | ").append(typeName)
+                          .append(" | ").append(o.getStage())
+                          .append(" | ").append(o.getValue() != null ? "$" + o.getValue() : "-").append(" |\n");
+                    }
+                    // byType summary if types are in use
+                    java.util.Map<String, java.util.List<OpportunityDTO>> byType = opps.stream()
+                            .filter(o -> o.getOpportunityTypeSlug() != null)
+                            .collect(java.util.stream.Collectors.groupingBy(OpportunityDTO::getOpportunityTypeSlug));
+                    if (!byType.isEmpty()) {
+                        md.append("\n### Pipeline by Type\n\n| Type | Count | Total Value |\n|---|---|---|\n");
+                        byType.entrySet().stream()
+                                .sorted((a, b) -> Integer.compare(b.getValue().size(), a.getValue().size()))
+                                .forEach(e -> {
+                                    java.math.BigDecimal total = e.getValue().stream()
+                                            .map(OpportunityDTO::getValue).filter(java.util.Objects::nonNull)
+                                            .reduce(java.math.BigDecimal.ZERO, java.math.BigDecimal::add);
+                                    md.append("| ").append(typeSlugToName.getOrDefault(e.getKey(), e.getKey()))
+                                      .append(" | ").append(e.getValue().size())
+                                      .append(" | $").append(total).append(" |\n");
+                                });
                     }
                 }
                 case "Contact" -> {
@@ -799,12 +826,17 @@ public class DocumentGenerationTools {
                 case "Opportunity" -> {
                     List<OpportunityDTO> rows = opportunityService.listOpportunities(0, 200, "name", "asc", "", null, java.util.Collections.emptyList(), null, java.util.Collections.emptyMap()).getContent();
                     Set<String> cfKeys = collectCustomFieldKeys(rows.stream().map(OpportunityDTO::getCustomFields).toList());
-                    csv.append("id,name,stage,value,probability,closeDate");
+                    Map<String, String> typeSlugToName = opportunityTypeService.getAll().stream()
+                            .collect(java.util.stream.Collectors.toMap(OpportunityTypeDTO::getSlug, OpportunityTypeDTO::getName));
+                    csv.append("id,name,stage,opportunity_type,value,probability,closeDate");
                     cfKeys.forEach(k -> csv.append(",cf_").append(k));
                     csv.append("\n");
                     for (OpportunityDTO o : rows) {
+                        String typeName = o.getOpportunityTypeSlug() != null
+                                ? typeSlugToName.getOrDefault(o.getOpportunityTypeSlug(), o.getOpportunityTypeSlug()) : "";
                         csv.append(o.getId()).append(",").append(csvEsc(o.getName())).append(",")
-                           .append(csvEsc(o.getStage())).append(",").append(o.getValue() != null ? o.getValue() : "")
+                           .append(csvEsc(o.getStage())).append(",").append(csvEsc(typeName))
+                           .append(",").append(o.getValue() != null ? o.getValue() : "")
                            .append(",").append(o.getProbability() != null ? o.getProbability() : "")
                            .append(",").append(o.getCloseDate() != null ? o.getCloseDate() : "");
                         appendCustomFieldValues(csv, o.getCustomFields(), cfKeys);

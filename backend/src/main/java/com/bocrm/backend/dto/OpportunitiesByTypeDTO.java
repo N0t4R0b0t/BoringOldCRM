@@ -24,9 +24,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import java.util.List;
 /**
- * OpportunitiesReportDTO.
+ * OpportunitiesByTypeDTO.
  *
  * @author Ricardo Salvador
  * @since 1.0.0
@@ -36,15 +35,10 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class OpportunitiesReportDTO {
-    private long totalOpportunities;
-    private double totalPipelineValue;
-    private double averageDealSize;
-    private long openDeals;
-    private long closedDeals;
+public class OpportunitiesByTypeDTO {
+    private String typeSlug;
+    private String typeName;
+    private long count;
+    private double value;
     private double winRate;
-    private List<OpportunitiesByStageDTO> byStage;
-    private List<OpportunitiesByTypeDTO> byType;
-    private List<MonthlyTrendDTO> monthlyTrend;
-    private List<ReportMetricsDTO> metrics;
 }

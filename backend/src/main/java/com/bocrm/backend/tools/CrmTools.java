@@ -68,6 +68,7 @@ public class CrmTools {
     private final CustomerService customerService;
     private final ContactService contactService;
     private final OpportunityService opportunityService;
+    private final OpportunityTypeService opportunityTypeService;
     private final ActivityService activityService;
     private final CustomRecordService customRecordService;
     private final OrderService orderService;
@@ -84,7 +85,8 @@ public class CrmTools {
     private final UserRepository userRepository;
 
     public CrmTools(CustomerService customerService, ContactService contactService,
-                    OpportunityService opportunityService, ActivityService activityService,
+                    OpportunityService opportunityService, OpportunityTypeService opportunityTypeService,
+                    ActivityService activityService,
                     CustomRecordService customRecordService, OrderService orderService, InvoiceService invoiceService,
                     CustomerRepository customerRepository, ContactRepository contactRepository,
                     OpportunityRepository opportunityRepository, ActivityRepository activityRepository,
@@ -96,6 +98,7 @@ public class CrmTools {
         this.customerService = customerService;
         this.contactService = contactService;
         this.opportunityService = opportunityService;
+        this.opportunityTypeService = opportunityTypeService;
         this.activityService = activityService;
         this.customRecordService = customRecordService;
         this.orderService = orderService;
@@ -324,13 +327,52 @@ public class CrmTools {
         }
     }
 
+    @Tool(description = "List all opportunity types configured for this tenant. Always call this before creating an opportunity with a type, or before filtering/analyzing by type, to get available slugs and names.")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public String listOpportunityTypes() {
+        try {
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) throw new ForbiddenException("Tenant context not set");
+            List<OpportunityTypeDTO> types = opportunityTypeService.getAll();
+            if (types.isEmpty()) return "No opportunity types configured. An admin can create types via createOpportunityType.";
+            StringBuilder sb = new StringBuilder("Opportunity types (" + types.size() + "):\n");
+            types.forEach(t -> sb.append("- slug=").append(t.getSlug())
+                    .append(" | name=").append(t.getName())
+                    .append(t.getDescription() != null && !t.getDescription().isBlank() ? " | " + t.getDescription() : "")
+                    .append("\n"));
+            return sb.toString();
+        } catch (Exception e) {
+            log.error("listOpportunityTypes failed", e);
+            return "Error listing opportunity types: " + e.getMessage();
+        }
+    }
+
+    @Tool(description = "Create a new opportunity type. Requires admin role. Call listOpportunityTypes first to avoid duplicates. The slug is auto-generated from the name.")
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
+    public String createOpportunityType(String name, String description) {
+        try {
+            Long tenantId = TenantContext.getTenantId();
+            if (tenantId == null) throw new ForbiddenException("Tenant context not set");
+            OpportunityTypeDTO.CreateRequest req = OpportunityTypeDTO.CreateRequest.builder()
+                    .name(name)
+                    .description(description)
+                    .build();
+            OpportunityTypeDTO created = opportunityTypeService.create(req);
+            return "Opportunity type created: slug=" + created.getSlug() + ", name=" + created.getName();
+        } catch (Exception e) {
+            log.error("createOpportunityType failed", e);
+            return "Error creating opportunity type: " + e.getMessage();
+        }
+    }
+
     @Tool(description = """
             Create a new sales opportunity. Name and customerId are required. Stage can be: prospecting, qualification, proposal, negotiation, closed_won, closed_lost.
+            To assign an opportunity type, first call listOpportunityTypes() to get available slugs, then pass the slug as opportunityTypeSlug.
             IMPORTANT: Before calling this, call getCustomFieldSchema("Opportunity") to discover any custom fields.
             Pass mandatory custom field values in customFieldsJson as a JSON object, e.g. {"fieldKey": "value"}.
             If any mandatory custom fields are missing from the user's request, ask the user for them before creating.""")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String createOpportunity(String name, Long customerId, String stage, String value, String closeDate, String customFieldsJson) {
+    public String createOpportunity(String name, Long customerId, String stage, String value, String closeDate, String opportunityTypeSlug, String customFieldsJson) {
         try {
             CreateOpportunityRequest req = CreateOpportunityRequest.builder()
                     .name(name)
@@ -338,12 +380,14 @@ public class CrmTools {
                     .stage(stage != null ? stage : "prospecting")
                     .value(value != null && !value.isBlank() ? new BigDecimal(value) : null)
                     .closeDate(closeDate != null && !closeDate.isBlank() ? LocalDate.parse(closeDate) : null)
+                    .opportunityTypeSlug(opportunityTypeSlug != null && !opportunityTypeSlug.isBlank() ? opportunityTypeSlug : null)
                     .build();
             if (customFieldsJson != null && !customFieldsJson.isBlank()) {
                 req.setCustomFields(objectMapper.readTree(customFieldsJson));
             }
             OpportunityDTO created = opportunityService.createOpportunity(req);
-            return "Opportunity created: id=" + created.getId() + ", name=" + created.getName() + ", stage=" + created.getStage();
+            String typeInfo = created.getOpportunityTypeSlug() != null ? ", type=" + created.getOpportunityTypeSlug() : "";
+            return "Opportunity created: id=" + created.getId() + ", name=" + created.getName() + ", stage=" + created.getStage() + typeInfo;
         } catch (Exception e) {
             log.error("createOpportunity failed", e);
             return "Error creating opportunity: " + e.getMessage();
@@ -352,19 +396,23 @@ public class CrmTools {
 
     @Tool(description = """
             Update an existing opportunity. Stage can be: prospecting, qualification, proposal, negotiation, closed_won, closed_lost.
+            To reassign the opportunity type, first call listOpportunityTypes() to get available slugs, then pass the slug as opportunityTypeSlug.
+            Pass an empty string for opportunityTypeSlug to remove the type assignment.
             Pass custom field values in customFieldsJson as a JSON object, e.g. {"fieldKey": "value"}.""")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String updateOpportunity(Long opportunityId, String name, String stage, String value, String customFieldsJson) {
+    public String updateOpportunity(Long opportunityId, String name, String stage, String value, String opportunityTypeSlug, String customFieldsJson) {
         try {
             UpdateOpportunityRequest req = new UpdateOpportunityRequest();
             if (name != null && !name.isBlank()) req.setName(name);
             if (stage != null && !stage.isBlank()) req.setStage(stage);
             if (value != null && !value.isBlank()) req.setValue(new BigDecimal(value));
+            if (opportunityTypeSlug != null) req.setOpportunityTypeSlug(opportunityTypeSlug.isBlank() ? null : opportunityTypeSlug);
             if (customFieldsJson != null && !customFieldsJson.isBlank()) {
                 req.setCustomFields(objectMapper.readTree(customFieldsJson));
             }
             OpportunityDTO updated = opportunityService.updateOpportunity(opportunityId, req);
-            return "Opportunity updated: id=" + updated.getId() + ", stage=" + updated.getStage();
+            String typeInfo = updated.getOpportunityTypeSlug() != null ? ", type=" + updated.getOpportunityTypeSlug() : "";
+            return "Opportunity updated: id=" + updated.getId() + ", stage=" + updated.getStage() + typeInfo;
         } catch (Exception e) {
             log.error("updateOpportunity failed", e);
             return "Error updating opportunity: " + e.getMessage();
@@ -633,12 +681,14 @@ public class CrmTools {
                 try {
                     String valueStr = r.has("value") ? r.path("value").asText(null) : null;
                     String dateStr  = r.has("closeDate") ? r.path("closeDate").asText(null) : null;
+                    String typeSlugStr = r.has("opportunityTypeSlug") ? r.path("opportunityTypeSlug").asText(null) : null;
                     CreateOpportunityRequest req = CreateOpportunityRequest.builder()
                             .name(r.path("name").asText())
                             .customerId(resolveCustomerId(r, tenantId))
                             .stage(r.has("stage") && !r.path("stage").asText().isBlank() ? r.path("stage").asText() : "prospecting")
                             .value(valueStr != null && !valueStr.isBlank() ? new java.math.BigDecimal(valueStr) : null)
                             .closeDate(dateStr != null && !dateStr.isBlank() ? java.time.LocalDate.parse(dateStr) : null)
+                            .opportunityTypeSlug(typeSlugStr != null && !typeSlugStr.isBlank() ? typeSlugStr : null)
                             .build();
                     JsonNode cf = extractCustomFields(r);
                     if (cf != null) req.setCustomFields(cf);
@@ -844,9 +894,9 @@ public class CrmTools {
             sortOrder can be: asc or desc (default: desc for value, asc for name)
             Examples: Get top 10 opportunities by value (highest first), or find all closing soon (sort by closeDate asc).
             Pass empty query to see all opportunities in the specified sort order.
-            OPTIONAL filters — omit entirely if not filtering: customerId (numeric customer id; do NOT pass 0 or a guess — omit to search across all customers), stage (do NOT pass an empty string — omit to search across all stages).""")
+            OPTIONAL filters — omit entirely if not filtering: customerId (numeric customer id; do NOT pass 0 or a guess — omit to search across all customers), stage (do NOT pass an empty string — omit to search across all stages), typeSlug (opportunity type slug from listOpportunityTypes; omit to search across all types).""")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String advancedOpportunitySearch(String query, String stage, Long customerId, String sortBy, String sortOrder) {
+    public String advancedOpportunitySearch(String query, String stage, Long customerId, String typeSlug, String sortBy, String sortOrder) {
         try {
             Long effectiveCustomerId = normalizeOptionalId(customerId);
             // Validate and default sortBy
@@ -864,9 +914,10 @@ public class CrmTools {
             if (safeSortBy.equals("name") && (sortOrder == null || sortOrder.isBlank())) {
                 safeSortOrder = "asc"; // alphabetical by default
             }
+            String effectiveTypeSlug = (typeSlug == null || typeSlug.isBlank()) ? null : typeSlug;
 
             PagedResponse<OpportunityDTO> result = opportunityService.listOpportunities(0, 50, safeSortBy, safeSortOrder, query, effectiveCustomerId,
-                    (stage == null || stage.isBlank()) ? java.util.Collections.emptyList() : java.util.List.of(stage), null, java.util.Collections.emptyMap());
+                    (stage == null || stage.isBlank()) ? java.util.Collections.emptyList() : java.util.List.of(stage), effectiveTypeSlug, java.util.Collections.emptyMap());
             if (result.getContent().isEmpty()) return "No opportunities found matching the criteria.";
             Long tenantId = TenantContext.getTenantId();
             List<Long> ids = result.getContent().stream().map(OpportunityDTO::getId).collect(java.util.stream.Collectors.toList());
@@ -875,8 +926,9 @@ public class CrmTools {
             result.getContent().forEach(o -> {
                 sb.append("- [").append(o.getId()).append("] ").append(o.getName())
                         .append(" | Value: $").append(o.getValue() != null ? o.getValue() : "0")
-                        .append(" | Stage: ").append(o.getStage())
-                        .append(" | Close: ").append(o.getCloseDate() != null ? o.getCloseDate() : "N/A");
+                        .append(" | Stage: ").append(o.getStage());
+                if (o.getOpportunityTypeSlug() != null) sb.append(" | Type: ").append(o.getOpportunityTypeSlug());
+                sb.append(" | Close: ").append(o.getCloseDate() != null ? o.getCloseDate() : "N/A");
                 appendTableFields(sb, o.getCustomFields(), calcFields.get(o.getId()));
                 sb.append("\n");
             });
@@ -889,15 +941,16 @@ public class CrmTools {
 
     @Tool(description = """
             Analyze opportunities data: find highest value, total pipeline, etc.
-            analysis can be: highest_value, lowest_value, total_value, average_value, by_stage, closing_soon (next 30 days)
-            OPTIONAL filters — omit entirely if not filtering: stage (e.g. 'proposal'; do NOT pass an empty string — omit to search across all stages), customerId (numeric customer id; do NOT pass 0 or a guess — omit to search across all customers), query (search term).
-            Use this for insights like "What's our biggest opportunity?" or "How much is in each pipeline stage?".""")
+            analysis can be: highest_value, lowest_value, total_value, average_value, by_stage, by_type, closing_soon (next 30 days)
+            OPTIONAL filters — omit entirely if not filtering: stage (e.g. 'proposal'; do NOT pass an empty string — omit to search across all stages), customerId (numeric customer id; do NOT pass 0 or a guess — omit to search across all customers), typeSlug (opportunity type slug from listOpportunityTypes; omit to search across all types), query (search term).
+            Use this for insights like "What's our biggest opportunity?", "How much is in each pipeline stage?", or "Break down pipeline by opportunity type".""")
     @Transactional(propagation = Propagation.NOT_SUPPORTED)
-    public String analyzeOpportunities(String analysis, String stage, Long customerId, String query) {
+    public String analyzeOpportunities(String analysis, String stage, Long customerId, String typeSlug, String query) {
         try {
             Long effectiveCustomerId = normalizeOptionalId(customerId);
+            String effectiveTypeSlug = (typeSlug == null || typeSlug.isBlank()) ? null : typeSlug;
             PagedResponse<OpportunityDTO> result = opportunityService.listOpportunities(0, 1000, "value", "desc", query, effectiveCustomerId,
-                    (stage == null || stage.isBlank()) ? java.util.Collections.emptyList() : java.util.List.of(stage), null, java.util.Collections.emptyMap());
+                    (stage == null || stage.isBlank()) ? java.util.Collections.emptyList() : java.util.List.of(stage), effectiveTypeSlug, java.util.Collections.emptyMap());
 
             if (result.getContent().isEmpty()) return "No opportunities found to analyze.";
 
@@ -956,7 +1009,24 @@ public class CrmTools {
                             .append(" - $").append(o.getValue()).append(" (Close: ").append(o.getCloseDate()).append(")\n"));
                     yield sb.toString();
                 }
-                default -> "Unknown analysis type. Use: highest_value, lowest_value, total_value, average_value, by_stage, or closing_soon.";
+                case "by_type" -> {
+                    java.util.Map<String, java.util.List<OpportunityDTO>> byType = opps.stream()
+                            .collect(java.util.stream.Collectors.groupingBy(
+                                    o -> o.getOpportunityTypeSlug() != null ? o.getOpportunityTypeSlug() : "(no type)"));
+                    StringBuilder sb = new StringBuilder("Opportunities by type:\n");
+                    byType.entrySet().stream()
+                            .sorted((a, b) -> {
+                                BigDecimal va = a.getValue().stream().map(OpportunityDTO::getValue).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                BigDecimal vb = b.getValue().stream().map(OpportunityDTO::getValue).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                return vb.compareTo(va);
+                            })
+                            .forEach(e -> {
+                                BigDecimal typeTotal = e.getValue().stream().map(OpportunityDTO::getValue).filter(java.util.Objects::nonNull).reduce(BigDecimal.ZERO, BigDecimal::add);
+                                sb.append("- ").append(e.getKey()).append(": ").append(e.getValue().size()).append(" opps, $").append(typeTotal).append("\n");
+                            });
+                    yield sb.toString();
+                }
+                default -> "Unknown analysis type. Use: highest_value, lowest_value, total_value, average_value, by_stage, by_type, or closing_soon.";
             };
         } catch (Exception e) {
             log.error("analyzeOpportunities failed", e);

@@ -284,6 +284,39 @@ export const ReportingDashboardPage = () => {
                 </div>
               </div>
             )}
+
+            {opportunitiesReport.byType?.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
+                <h3 className="text-base font-medium text-gray-900 dark:text-gray-100 mb-4">Pipeline by Type</h3>
+                <div className="space-y-4">
+                  {opportunitiesReport.byType.map((t: any) => (
+                    <div key={t.typeSlug} className="space-y-1">
+                      <div className="flex justify-between text-sm">
+                        <span className="font-medium text-gray-700 dark:text-gray-300">
+                          {t.typeName} ({t.count})
+                        </span>
+                        <span className="text-gray-500 dark:text-gray-400 text-xs">
+                          Win rate: {t.winRate.toFixed(1)}%
+                        </span>
+                        <span className="text-gray-900 dark:text-gray-100">${t.value.toFixed(0)}</span>
+                      </div>
+                      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2.5 overflow-hidden">
+                        <div
+                          className="bg-indigo-500 h-2.5 rounded-full"
+                          style={{
+                            width: `${
+                              opportunitiesReport.totalPipelineValue > 0
+                                ? (t.value / opportunitiesReport.totalPipelineValue) * 100
+                                : 0
+                            }%`,
+                          }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

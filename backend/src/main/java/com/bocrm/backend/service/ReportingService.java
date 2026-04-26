@@ -51,19 +51,22 @@ public class ReportingService {
     private final ActivityRepository activityRepository;
     private final OrderRepository orderRepository;
     private final InvoiceRepository invoiceRepository;
+    private final OpportunityTypeService opportunityTypeService;
 
     public ReportingService(CustomerRepository customerRepository,
                            OpportunityRepository opportunityRepository,
                            ContactRepository contactRepository,
                            ActivityRepository activityRepository,
                            OrderRepository orderRepository,
-                           InvoiceRepository invoiceRepository) {
+                           InvoiceRepository invoiceRepository,
+                           OpportunityTypeService opportunityTypeService) {
         this.customerRepository = customerRepository;
         this.opportunityRepository = opportunityRepository;
         this.contactRepository = contactRepository;
         this.activityRepository = activityRepository;
         this.orderRepository = orderRepository;
         this.invoiceRepository = invoiceRepository;
+        this.opportunityTypeService = opportunityTypeService;
     }
 
     @Transactional(readOnly = true)
@@ -303,6 +306,33 @@ public class ReportingService {
                         .build())
                 .collect(Collectors.toList());
 
+        // byType breakdown — resolve slug to display name
+        List<OpportunityTypeDTO> allTypes = opportunityTypeService.getAll();
+        Map<String, String> slugToName = allTypes.stream()
+                .collect(Collectors.toMap(OpportunityTypeDTO::getSlug, OpportunityTypeDTO::getName));
+        Map<String, List<Opportunity>> byTypeMap = opportunities.stream()
+                .filter(o -> o.getOpportunityTypeSlug() != null && !o.getOpportunityTypeSlug().isBlank())
+                .collect(Collectors.groupingBy(Opportunity::getOpportunityTypeSlug));
+        List<OpportunitiesByTypeDTO> typeBreakdown = byTypeMap.entrySet().stream()
+                .map(e -> {
+                    String slug = e.getKey();
+                    List<Opportunity> typeOpps = e.getValue();
+                    double typeValue = typeOpps.stream().filter(o -> o.getValue() != null)
+                            .mapToDouble(o -> o.getValue().doubleValue()).sum();
+                    long typeWon = typeOpps.stream().filter(o -> "closed_won".equalsIgnoreCase(o.getStage())).count();
+                    long typeLost = typeOpps.stream().filter(o -> "closed_lost".equalsIgnoreCase(o.getStage())).count();
+                    double typeWinRate = (typeWon + typeLost) > 0 ? (double) typeWon / (typeWon + typeLost) * 100 : 0;
+                    return OpportunitiesByTypeDTO.builder()
+                            .typeSlug(slug)
+                            .typeName(slugToName.getOrDefault(slug, slug))
+                            .count(typeOpps.size())
+                            .value(typeValue)
+                            .winRate(typeWinRate)
+                            .build();
+                })
+                .sorted(Comparator.comparingDouble(OpportunitiesByTypeDTO::getValue).reversed())
+                .collect(Collectors.toList());
+
         // Monthly trend
         Map<String, List<Opportunity>> byMonth = opportunities.stream()
                 .collect(Collectors.groupingBy(o -> 
@@ -343,6 +373,7 @@ public class ReportingService {
                 .closedDeals(closedCount)
                 .winRate(winRate)
                 .byStage(stageBreakdown)
+                .byType(typeBreakdown)
                 .monthlyTrend(monthlyTrend)
                 .metrics(metrics)
                 .build();
