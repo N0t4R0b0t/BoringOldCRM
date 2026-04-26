@@ -5,7 +5,7 @@ A boring, scalable, multi-tenant CRM. Schema-per-tenant Postgres isolation. Alwa
 Backend: Java 21 · Spring Boot 4 · Gradle
 Frontend: React 19 · Vite · TypeScript
 Data: Postgres (JSONB) · RabbitMQ (outbox pattern)
-AI: Anthropic · OpenAI · Gemini (multi-provider with automatic fallback)
+AI: Anthropic · OpenAI · Gemini · Ollama (multi-provider with automatic fallback)
 
 ---
 
@@ -34,23 +34,29 @@ Result: one codebase, unlimited tenants, bulletproof isolation.
 | [docs/api.md](docs/api.md) | Full REST API reference, grouped by domain |
 | [docs/notifications.md](docs/notifications.md) | Email + in-app notification system — triggers, architecture, configuration |
 | [docs/domain-model.md](docs/domain-model.md) | Entity overview and indexing notes |
+| [docs/integration-framework.md](docs/integration-framework.md) | Vendor integrations (Slack, Webhook, Zapier, HubSpot) — architecture, adapter API, security |
 
 ---
 
 ## Quick Start
 
+**Prerequisites:** BOCRM requires an Auth0 account (or any OIDC-compatible provider) for authentication. [Auth0 offers a free developer plan](https://auth0.com/signup) that covers local development and small deployments.
+
 ```bash
-# 1. Start local infrastructure
+# 1. Create an Auth0 application and configure auth
+#    Copy backend/src/main/resources/application-example.yml → application-local.yml
+#    Copy frontend/.env.example → .env.local
+#    Fill in your Auth0 tenant URL, client ID, and audience in both files
+
+# 2. Start local infrastructure
 docker compose up -d
 
-# 2. Start the backend (http://localhost:8080/api)
+# 3. Start the backend (http://localhost:8080/api)
 cd backend && ./gradlew bootRun
 
-# 3. Start the frontend (http://localhost:5173)
+# 4. Start the frontend (http://localhost:5173)
 cd frontend && npm install && npm run dev
 ```
-
-**Demo credentials:** `demo@bocrm.com` / `demo123`
 
 Infrastructure ports:
 - Postgres: `localhost:5432` (db=`crm`, user=`crm`, pass=`crm`)
@@ -103,27 +109,12 @@ All paths upload the archive as a workflow artifact (30-day retention). See [doc
 
 ---
 
-## Roadmap
-
-The following major features are planned for upcoming releases:
-
-| Feature | Status | Description |
-|---------|--------|-------------|
-| **Orders & Invoicing** | Planned | Full order and invoice management with line items, tax calculation, custom fields |
-| **Integration Framework** | Planned | Vendor integrations (Slack, Webhook, Zapier, HubSpot) via adapter pattern + encrypted credential storage |
-| **Advanced Search** | Planned | Full-field OpenSearch indexing with complex queries across custom + calculated fields |
-
-See the [plan file](.claude/plans/ancient-seeking-island.md) for detailed technical specifications.
-
----
-
 ## Contributing
 
 We welcome contributions! Before you start:
 
 1. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup, code style, and multi-tenancy rules
-2. Check the [Roadmap](#roadmap) — your idea might already be planned
-3. Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — we're committed to an inclusive community
+2. Read [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) — we're committed to an inclusive community
 
 ---
 
